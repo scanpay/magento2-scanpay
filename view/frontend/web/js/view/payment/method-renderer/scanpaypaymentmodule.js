@@ -81,29 +81,47 @@ define(
                         billingAddress: quote.billingAddress()
                     };
                 }
-                console.log(serviceUrl);
-
                 fullScreenLoader.startLoader();
-                console.log('post');
                 return storage.post(
                     serviceUrl, JSON.stringify(payload)
-                ).done(function (response) {
-                    console.log('done');
-                    alert('yay');
-                    console.log(response);/*
+                ).done(function (orderid) {
+                    var formData = new FormData();
+                    formData.append('orderid', orderid);
+
+                    var err = {};
                     var xhr = new XMLHttpRequest();
-                    xhr.open('GET', '/path/to/image.png', true);
+                    xhr.open('POST', urlBuilder.createUrl('/scanpay/index/getpaymenturl', {}), true);
                     xhr.onload = function(e) {
-                        if (this.status == 200) {
-                        // Note: .response instead of .responseText
-                        var blob = new Blob([this.response], {type: 'image/png'});
+                        fullScreenLoader.stopLoader();
+                        if (this.status !== 200) {
+                            alert('non 200 response');
+                            err.message = 'Internal server error: Non-200 response code';
+                            return self.messageContainer.addErrorMessage(err);
                         }
+                        var resObj;
+                        try {
+                            resObj = JSON.parse(this.response);
+                        } catch (thrownerr) {
+                            alert('json parse err: ' + err);
+                            err.message = 'Internal server error: Unable to parse json';
+                            return self.messageContainer.addErrorMessage(err);
+                        }
+                        if (resObj.error) {
+                            alert('json res err: ' + resObj.error);
+                            err.message = resObj.error;
+                            return self.messageContainer.addErrorMessage(err);
+                        }
+                        window.location = resObj.url;
                     };
-                    req.send(null);*/
+                    xhr.onerror = function (e) {
+                        fullScreenLoader.stopLoader();
+                        err.message = 'Internal server error: Connection error';
+                        return self.messageContainer.addErrorMessage(err);
+                    };
+                    xhr.send(null);
                 }).fail(function (response) {
-                    console.log('err');
-                    errorProcessor.process(response, self.messageContainer);
                     fullScreenLoader.stopLoader();
+                    errorProcessor.process(response, self.messageContainer);
                 });
                 /*if (!customer.isLoggedIn()) {
                     document.querySelector(loginFormSelector).validation();
