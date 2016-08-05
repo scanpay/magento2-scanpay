@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+  <default>
+    <payment>
+      <scanpaypaymentmodule>
+        <debug>1</debug>
+        <active>1</active>
+        <title>Scanpay</title>
+        <order_status>pending_payment</order_status>
+        <instructions>Instruction.</instructions>
+        <payment_action>true</payment_action>
+        <model>Scanpay\PaymentModule\Model\ScanpayPaymentModule</model>
+      </scanpaypaymentmodule>
+    </payment>
+  </default>
+</config>
