@@ -20,12 +20,10 @@ define(
         'use strict';
 
         return Component.extend({
+            redirectAfterPlaceOrder: false,
+            
             defaults: {
                 template: 'Scanpay_PaymentModule/payment/form'
-            },
-
-            initObservable: function () {
-                return this;
             },
 
             getCode: function () {
@@ -36,6 +34,19 @@ define(
                     'method': this.item.method
                 };
             },
+            /*
+            selectPaymentMethod: function() {
+                selectPaymentMethodAction(this.getData());
+                checkoutData.setSelectedPaymentMethod(this.item.method);
+                return true;
+            },
+            afterPlaceOrder: function () {
+                //window.location.replace(url.build('mymodule/standard/redirect/'));
+            },
+            // Returns send check to info
+            getMailingAddress: function() {
+                return window.checkoutConfig.payment.checkmo.mailingAddress;
+            },*/
             placeOrder: function (data, event) {
                 console.log(data);
                 console.log(event);
