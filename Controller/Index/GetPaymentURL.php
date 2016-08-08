@@ -2,6 +2,7 @@
 
 namespace Scanpay\PaymentModule\Controller\Index;
 use Scanpay\PaymentModule\Model\ScanpayClient;
+use Scanpay\PaymentModule\Model\Money;
 
 class GetPaymentURL extends \Magento\Framework\App\Action\Action
 {
@@ -27,27 +28,35 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
     }
 
     public function execute() {
-        echo 'start';
         $result = $this->resultJsonFactory->create();
-
-        $order = $this->order->load($this->request->getParam('order'));
-        echo $this->request->getParam('order') . "<br>";
-        echo "id: [" . $order->getId() . ']';
-        return;
+        $order = $this->order->load($this->request->getParam('orderid'));
         if (!$order->getId()) {
             return $result->setData(['error' => 'order not found']);
         }
-        
+        $orderid = $order->getIncrementId();
+        $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
+        $order->save();
+
+        $data = [
+            'orderid' => $orderid,
+            'items'   => [],
+            'address' => [
+                'billing' => [],
+                'shipping' => [],
+            ],
+        ];
+
+        $cur = $order->getOrderCurrencyCode();
         $orderItems = $this->order->getAllItems();
         foreach ($orderItems as $item) {
-            echo $item->getProductId();
+            array_push($data['items'], [
+                'name' => $item->getName(),
+                'quantity' => intval($item->getQtyOrdered()),
+                'sku' => $item->getSku(),
+                'price' => (new Money($item->getPrice(), $cur))->print(),
+            ]);
         }
-
-        $quoteItems = $this->quote->getAllItems();
-        foreach ($quoteItems as $item) {
-            echo $item->getProductId();
-        }
-        echo 'done';
+        echo json_encode($data);
         return;
         //echo print_r($this->order);
         //echo print_r($this->quote);
@@ -109,20 +118,12 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             'state' => '',
         ];
         /* Construct the data object sent for URL generation */
-        $data = [
-            'orderid' => 'a766409',
-            'ip' => $_SERVER['REMOTE_ADDR'],
-            'items'   => $items,
-            'address' => [
-                'billing' => $billingaddress,
-                'shipping' => $shippingaddress,
-            ],
-        ];
+
 
 
 
         try {
-            $paymenturl = $client->GetPaymentURL($data);
+            $paymenturl = $client->GetPaymentURL($data, ['cardholderIP' => $_SERVER['REMOTE_ADDR']]);
         } catch (\Exception $e) {
             //die('Caught exception: ' . $e->getMessage() . "\n");
             return $result->setData(['error' => $e->getMessage()]);

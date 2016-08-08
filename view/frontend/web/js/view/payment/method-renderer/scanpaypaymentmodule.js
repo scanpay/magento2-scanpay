@@ -48,25 +48,15 @@ define(
                 return window.checkoutConfig.payment.checkmo.mailingAddress;
             },*/
             placeOrder: function (data, event) {
-                console.log(data);
-                console.log(event);
                 if (!this.validate()) {
                     alert('invalid');
                     fullScreenLoader.stopLoader();
                     return false;
                 }
                 this.selectPaymentMethod();
-                /*if (event) {
+                if (event) {
                     event.preventDefault();
                 }
-                var self = this;
-                var placeOrder;
-                //var emailValidationResult = customer.isLoggedIn();
-                
-                var loginFormSelector = 'form[data-role=email-with-possible-login]';
-                if (!this.validate() || !additionalValidators.validate()) {
-                    return false;
-                }*/
                 /* Code inspired by https://github.com/magento/magento2/blob/develop/app/code/Magento/Checkout/view/frontend/web/js/action/place-order.js */
                 var serviceUrl;
                 var payload;
@@ -98,6 +88,7 @@ define(
                 ).done(function (orderid) {
                     var formData = new FormData();
                     formData.append('orderid', orderid);
+                    alert(orderid);
 
                     var err = {};
                     var xhr = new XMLHttpRequest();
@@ -105,7 +96,6 @@ define(
                     xhr.onload = function(e) {
                         fullScreenLoader.stopLoader();
                         if (this.status !== 200) {
-                            alert('non 200 response');
                             err.message = 'Internal server error: Non-200 response code';
                             return self.messageContainer.addErrorMessage(err);
                         }
@@ -113,12 +103,10 @@ define(
                         try {
                             resObj = JSON.parse(this.response);
                         } catch (thrownerr) {
-                            alert('json parse err: ' + err);
                             err.message = 'Internal server error: Unable to parse json';
                             return self.messageContainer.addErrorMessage(err);
                         }
                         if (resObj.error) {
-                            alert('json res err: ' + resObj.error);
                             err.message = resObj.error;
                             return self.messageContainer.addErrorMessage(err);
                         }

@@ -3,21 +3,24 @@
 namespace Scanpay\PaymentModule\Model;
 
 class ScanpayClient {
-    private $apikey;
-    private $host;
+    protected $apikey;
+    protected $host;
     public function __construct($arg) {
         $this->apikey = $arg['apikey'];
         $this->host = $arg['host'];
     }
 
-    public function GetPaymentURL($data) {
+    public function GetPaymentURL($data, $opts = []) {
         /* Create a curl request towards the api endpoint */
         $ch = curl_init('https://' . $this->{'host'} . '/v1/new');
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
         curl_setopt($ch, CURLOPT_USERPWD, $this->{'apikey'});
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 2);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        if (isset($opts['cardholderIP'])) { 
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-Cardholder-Ip: ' . $cardholderip]);
+        }
 
         $result = curl_exec($ch);
         if ($result === FALSE) {
