@@ -37,88 +37,83 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
         $order->save();
 
+
+        $billaddr = $order->getBillingAddress();
+        $shipaddr = $order->getShippingAddress();
+
         $data = [
             'orderid' => $orderid,
             'items'   => [],
-            'address' => [
-                'billing' => [],
-                'shipping' => [],
-            ],
         ];
+        
+        /* Add billing address to data */
+        if (!empty($billaddr)) {
+            if (!isset($data['address'])) { $data['address'] = []; }
+            $data['address']['billing'] = array_filter([
+                'name'    => $billaddr->getName(),
+                'email'   => $billaddr->getEmail(),
+                'phone'   => preg_replace('/\s+/', '', $billaddr->getTelephone()),
+                'street'  => implode(', ', $billaddr->getStreet()),
+                'city'    => $billaddr->getCity(),
+                'zip'     => $billaddr->getPostcode(),
+                'country' => $billaddr->getCountryId(),
+                'state'   => $billaddr->getRegion(),
+                'company' => $billaddr->getCompany(),
+                'vatin'   => $billaddr->getVatId(),
+            //  'gln'     => ?,
+            ]);
+        }
 
+        /* Add shipping address to data */
+        if (!empty($shipaddr)) {
+            if (!isset($data['address'])) { $data['address'] = []; }
+            $data['address']['shipping'] = array_filter([
+                'email'   => $shipaddr->getEmail(),
+                'phone'   => preg_replace('/\s+/', '', $billaddr->getTelephone()),
+                'street'  => implode(', ', $billaddr->getStreet()),
+                'city'    => $shipaddr->getCity(),
+                'zip'     => $shipaddr->getPostcode(),
+                'country' => $shipaddr->getCountryId(),
+                'state'   => $shipaddr->getRegion(),
+                'company' => $shipaddr->getCompany(),
+            ]);
+        }
+
+        /* Add ordered items to data */
         $cur = $order->getOrderCurrencyCode();
         $orderItems = $this->order->getAllItems();
+
+        $tot = 0;
         foreach ($orderItems as $item) {
+
+            $itemprice = $item->getPrice() + ($item->getTaxAmount() - $item->getDiscountAmount()) / $item->getQtyOrdered();
+            if ($itemprice < 0) {
+                return $result->setData(['error' => 'Cannot handle negative price for item']);
+            }
+            $tot += $itemprice * $item->getQtyOrdered();
             array_push($data['items'], [
                 'name' => $item->getName(),
                 'quantity' => intval($item->getQtyOrdered()),
                 'sku' => $item->getSku(),
-                'price' => (new Money($item->getPrice(), $cur))->print(),
+                'price' => (new Money($itemprice, $cur))->print(),
             ]);
         }
-        echo json_encode($data);
-        return;
-        //echo print_r($this->order);
-        //echo print_r($this->quote);
-
-        /*
-        if (!$this->getRequest()->isPost()) {
-            return;
+        $shipprice = $order->getShippingAmount() + $order->getShippingTaxAmount() - $order->getShippingDiscountAmount();
+        if ($shipprice > 0) {
+            array_push($data['items'], [
+                'name' => 'Shipping: ' . $order->getShippingDescription(),
+                'quantity' => 1,
+                'price' => (new Money($shipprice, $cur))->print(),
+            ]);
+            $tot += $shipprice;
         }
-        */
-
+        echo json_encode($data, JSON_UNESCAPED_UNICODE);
+        
         /* Create a scanpay client */
-        $client = new ScanpayClient([
+        /*$client = new ScanpayClient([
             'host' => 'api.scanpay.dk',
             'apikey' => '65:CzutXxU09RHXUSWqVoonTyPq/YTTchFffpcYnCv+ckeJiS2olDxC0ZNzUGWQnLIm',
         ]);
-
-        /* Define the items purchased */
-        $items = [
-            [
-                'name' => 'Pink Floyd: The Dark Side Of The Moon',
-                'quantity' => 2,
-                'price' => '99.99 DKK',
-            ],
-            [
-                'name' => 'Dwarf Lemon Tree',
-                'quantity' => 27,
-                'price' => '800.1 DKK',
-            ],
-            [
-                'name' => '巨人宏偉的帽子',
-                'quantity' => 2,
-                'price' => '420 DKK',
-            ],
-        ];
-
-        $billingaddress = [
-            'company' => 'The Shop A/S',
-            'vatin' => '35413308',
-            'gln' => '7495563456235',
-            'name' => 'John Doe',
-            'email' => 'john@doe.com',
-            'phone' => '+4512345678',
-            'street' => 'Langgade 23, 2. th',
-            'city' => 'Havneby',
-            'zip' => '1234',
-            'country' => 'DK',
-            'state' => '',
-        ];
-
-        $shippingaddress = [
-            'company' => 'The Choppa A/S',
-            'name' => 'Jan Dåh',
-            'email' => 'jan@doh.com',
-            'phone' => '+4587654321',
-            'street' => 'Langgade 23, 1. th',
-            'city' => 'Haveby',
-            'zip' => '1235',
-            'country' => 'DK',
-            'state' => '',
-        ];
-        /* Construct the data object sent for URL generation */
-
 
 
 
@@ -129,19 +124,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             return $result->setData(['error' => $e->getMessage()]);
         }
         return $result->setData(['url' => $paymenturl]);
+*/
 
-        //$this->getRequest()->getParam('');
-        /*
-        if ($this->getRequest()->isAjax())) {
-            $test = Array
-            (
-                'Firstname' => 'What is your firstname',
-                'Email' => 'What is your emailId',
-                'Lastname' => 'What is your lastname',
-                'Country' => 'Your Country'
-            );
-            return $result->setData($test);
-        }
-        */
     }
 }

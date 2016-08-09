@@ -198,7 +198,7 @@ class Money {
         $this->currency = $currency;
     }
     public function __toString() {
-        return $this->amount . $this->currency;
+        return $this->amount . ' ' . $this->currency;
     }
     public function print() {
         return (string)$this;
