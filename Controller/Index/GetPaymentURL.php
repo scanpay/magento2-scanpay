@@ -11,13 +11,18 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
     protected $quote;
     protected $checkoutSession;
     protected $resultJsonFactory;
+    protected $scopeConfig;
+    protected $crypt;
+    
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
         \Magento\Framework\App\Request\Http $request,
         \Magento\Sales\Model\Order $order,
         \Magento\Quote\Model\Quote $quote,
         \Magento\Checkout\Model\Session $checkoutSession,
-        \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory
+        \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory,
+        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
+        \Magento\Framework\Encryption\Encryptor $crypt
     ) {
         parent::__construct($context);
         $this->request = $request;
@@ -25,13 +30,16 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         $this->quote = $quote;
         $this->checkoutSession = $checkoutSession;
         $this->resultJsonFactory = $resultJsonFactory;
+        $this->scopeConfig = $scopeConfig;
+        $this->crypt = $crypt;
     }
 
     public function execute() {
         $result = $this->resultJsonFactory->create();
         $order = $this->order->load($this->request->getParam('orderid'));
         if (!$order->getId()) {
-            return $result->setData(['error' => 'order not found']);
+            echo json_encode(['error' => 'order not found'], JSON_UNESCAPED_UNICODE);
+            return;
         }
         $orderid = $order->getIncrementId();
         $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
@@ -88,7 +96,8 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
 
             $itemprice = $item->getPrice() + ($item->getTaxAmount() - $item->getDiscountAmount()) / $item->getQtyOrdered();
             if ($itemprice < 0) {
-                return $result->setData(['error' => 'Cannot handle negative price for item']);
+                echo json_encode(['error' => 'Cannot handle negative price for item'], JSON_UNESCAPED_UNICODE);
+                return;
             }
             $tot += $itemprice * $item->getQtyOrdered();
             array_push($data['items'], [
@@ -106,14 +115,26 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
                 'price' => (new Money($shipprice, $cur))->print(),
             ]);
             $tot += $shipprice;
+        }        
+        $apikey = trim($this->crypt->decrypt($this->scopeConfig->getValue('payment/scanpaypaymentmodule/apikey')));
+        if (empty($apikey)) {
+            echo json_encode(['error' => 'Missing API key'], JSON_UNESCAPED_UNICODE);
+            return;
         }
-        echo json_encode($data, JSON_UNESCAPED_UNICODE);
-        
-        /* Create a scanpay client */
-        /*$client = new ScanpayClient([
+        $client = new ScanpayClient([
             'host' => 'api.scanpay.dk',
-            'apikey' => '65:CzutXxU09RHXUSWqVoonTyPq/YTTchFffpcYnCv+ckeJiS2olDxC0ZNzUGWQnLIm',
+            'apikey' => $apikey,
         ]);
+        $paymenturl = '';
+        try {
+            $paymenturl = $client->GetPaymentURL($data, ['cardholderIP' => $_SERVER['REMOTE_ADDR']]);
+        } catch (\Exception $e) {
+            echo json_encode(['error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+        echo json_encode(['url' => $paymenturl], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        /* Create a scanpay client */
+        /*
 
 
 

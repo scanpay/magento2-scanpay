@@ -88,11 +88,10 @@ define(
                 ).done(function (orderid) {
                     var formData = new FormData();
                     formData.append('orderid', orderid);
-                    alert(orderid);
 
                     var err = {};
                     var xhr = new XMLHttpRequest();
-                    xhr.open('POST', urlBuilder.createUrl('/scanpay/index/getpaymenturl', {}), true);
+                    xhr.open('POST', '/scanpay/Index/GetPaymentURL', true);
                     xhr.onload = function(e) {
                         fullScreenLoader.stopLoader();
                         if (this.status !== 200) {
@@ -117,7 +116,7 @@ define(
                         err.message = 'Internal server error: Connection error';
                         return self.messageContainer.addErrorMessage(err);
                     };
-                    xhr.send(null);
+                    xhr.send(formData);
                 }).fail(function (response) {
                     fullScreenLoader.stopLoader();
                     errorProcessor.process(response, self.messageContainer);
