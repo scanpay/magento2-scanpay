@@ -10,17 +10,15 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
     protected $order;
     protected $quote;
     protected $checkoutSession;
-    protected $resultJsonFactory;
     protected $scopeConfig;
     protected $crypt;
-    
+
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
         \Magento\Framework\App\Request\Http $request,
         \Magento\Sales\Model\Order $order,
         \Magento\Quote\Model\Quote $quote,
         \Magento\Checkout\Model\Session $checkoutSession,
-        \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Framework\Encryption\Encryptor $crypt
     ) {
@@ -29,22 +27,22 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         $this->order = $order;
         $this->quote = $quote;
         $this->checkoutSession = $checkoutSession;
-        $this->resultJsonFactory = $resultJsonFactory;
         $this->scopeConfig = $scopeConfig;
         $this->crypt = $crypt;
     }
 
     public function execute() {
-        $result = $this->resultJsonFactory->create();
         $order = $this->order->load($this->request->getParam('orderid'));
         if (!$order->getId()) {
             echo json_encode(['error' => 'order not found'], JSON_UNESCAPED_UNICODE);
             return;
         }
         $orderid = $order->getIncrementId();
-        $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
-        $order->save();
-
+        
+        /* Restore shopping cart (i.e. the quote) */
+        $quote = $this->quote->loadByIdWithoutStore($order->getQuoteId());
+        $quote->setIsActive(1)->setReservedOrderId(null)->save();
+        $this->checkoutSession->replaceQuote($quote);
 
         $billaddr = $order->getBillingAddress();
         $shipaddr = $order->getShippingAddress();
@@ -53,7 +51,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             'orderid' => $orderid,
             'items'   => [],
         ];
-        
+
         /* Add billing address to data */
         if (!empty($billaddr)) {
             if (!isset($data['address'])) { $data['address'] = []; }
@@ -96,7 +94,8 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
 
             $itemprice = $item->getPrice() + ($item->getTaxAmount() - $item->getDiscountAmount()) / $item->getQtyOrdered();
             if ($itemprice < 0) {
-                echo json_encode(['error' => 'Cannot handle negative price for item'], JSON_UNESCAPED_UNICODE);
+                error_log('Cannot handle negative price for item');
+                echo json_encode(['error' => 'internal server error']);
                 return;
             }
             $tot += $itemprice * $item->getQtyOrdered();
@@ -115,10 +114,11 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
                 'price' => (new Money($shipprice, $cur))->print(),
             ]);
             $tot += $shipprice;
-        }        
+        }
         $apikey = trim($this->crypt->decrypt($this->scopeConfig->getValue('payment/scanpaypaymentmodule/apikey')));
         if (empty($apikey)) {
-            echo json_encode(['error' => 'Missing API key'], JSON_UNESCAPED_UNICODE);
+            error_log('Missing API key in scanpay payment method configuration');
+            echo json_encode(['error' => 'internal server error']);
             return;
         }
         $client = new ScanpayClient([
@@ -129,23 +129,13 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         try {
             $paymenturl = $client->GetPaymentURL($data, ['cardholderIP' => $_SERVER['REMOTE_ADDR']]);
         } catch (\Exception $e) {
-            echo json_encode(['error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+            error_log('scanpay client exception: ' . $e->getMessage());
+            echo json_encode(['error' => 'internal server error']);
             return;
         }
+        $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
+        $order->save();
         echo json_encode(['url' => $paymenturl], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        /* Create a scanpay client */
-        /*
-
-
-
-        try {
-            $paymenturl = $client->GetPaymentURL($data, ['cardholderIP' => $_SERVER['REMOTE_ADDR']]);
-        } catch (\Exception $e) {
-            //die('Caught exception: ' . $e->getMessage() . "\n");
-            return $result->setData(['error' => $e->getMessage()]);
-        }
-        return $result->setData(['url' => $paymenturl]);
-*/
-
     }
+
 }

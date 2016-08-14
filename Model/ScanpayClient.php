@@ -38,7 +38,10 @@ class ScanpayClient {
         curl_close($ch);
 
         if ($httpcode !== 200) {
-            throw new \Exception('non-200 response code: ' . $httpcode);
+            if ($httpcode === 403) {
+                throw new \Exception('Invalid API-key');
+            }
+            throw new \Exception('Unexpected http response code: ' . $httpcode);
         }
         /* Attempt to decode the json response */
         $jsonres = @json_decode($result);

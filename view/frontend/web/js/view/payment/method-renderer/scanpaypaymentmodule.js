@@ -121,32 +121,6 @@ define(
                     fullScreenLoader.stopLoader();
                     errorProcessor.process(response, self.messageContainer);
                 });
-                /*if (!customer.isLoggedIn()) {
-                    document.querySelector(loginFormSelector).validation();
-                    emailValidationResult = Boolean(document.querySelector(loginFormSelector + ' input[name=username]').valid());
-                }*/
-                    /*
-                if (emailValidationResult && this.validate() && additionalValidators.validate()) {
-                    this.isPlaceOrderActionAllowed(false);
-                    placeOrder = placeOrderAction(this.getData(), false, this.messageContainer);
-
-                    $.when(placeOrder).fail(function () {
-                     self.isPlaceOrderActionAllowed(true);
-                    }).done(this.afterPlaceOrder.bind(this));
-                    return true;
-                }*/
-                    
-                    /*
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('GET', '/path/to/image.png', true);
-                    xhr.responseType = 'blob';
-                    xhr.onload = function(e) {
-                      if (this.status == 200) {
-                        // Note: .response instead of .responseText
-                        var blob = new Blob([this.response], {type: 'image/png'});
-                      }
-                    };
-                    */
             }
         });
     }
