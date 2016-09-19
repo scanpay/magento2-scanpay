@@ -10,6 +10,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
     protected $order;
     protected $quote;
     protected $checkoutSession;
+    protected $countryInformation;
     protected $scopeConfig;
     protected $crypt;
 
@@ -19,6 +20,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         \Magento\Sales\Model\Order $order,
         \Magento\Quote\Model\Quote $quote,
         \Magento\Checkout\Model\Session $checkoutSession,
+        \Magento\Directory\Api\CountryInformationAcquirerInterface $countryInformation,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Framework\Encryption\Encryptor $crypt
     ) {
@@ -27,6 +29,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         $this->order = $order;
         $this->quote = $quote;
         $this->checkoutSession = $checkoutSession;
+        $this->countryInformation = $countryInformation;
         $this->scopeConfig = $scopeConfig;
         $this->crypt = $crypt;
     }
@@ -51,18 +54,16 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             'orderid' => $orderid,
             'items'   => [],
         ];
-
         /* Add billing address to data */
         if (!empty($billaddr)) {
-            if (!isset($data['address'])) { $data['address'] = []; }
-            $data['address']['billing'] = array_filter([
+            $data['billing'] = array_filter([
                 'name'    => $billaddr->getName(),
                 'email'   => $billaddr->getEmail(),
                 'phone'   => preg_replace('/\s+/', '', $billaddr->getTelephone()),
-                'street'  => implode(', ', $billaddr->getStreet()),
+                'address' => $billaddr->getStreet(),
                 'city'    => $billaddr->getCity(),
                 'zip'     => $billaddr->getPostcode(),
-                'country' => $billaddr->getCountryId(),
+                'country' => $this->countryInformation->getCountryInfo($billaddr->getCountryId())->getFullNameLocale(),
                 'state'   => $billaddr->getRegion(),
                 'company' => $billaddr->getCompany(),
                 'vatin'   => $billaddr->getVatId(),
@@ -72,14 +73,13 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
 
         /* Add shipping address to data */
         if (!empty($shipaddr)) {
-            if (!isset($data['address'])) { $data['address'] = []; }
-            $data['address']['shipping'] = array_filter([
+            $data['shipping'] = array_filter([
                 'email'   => $shipaddr->getEmail(),
-                'phone'   => preg_replace('/\s+/', '', $billaddr->getTelephone()),
-                'street'  => implode(', ', $billaddr->getStreet()),
+                'phone'   => preg_replace('/\s+/', '', $shipaddr->getTelephone()),
+                'address' => $shipaddr->getStreet(),
                 'city'    => $shipaddr->getCity(),
                 'zip'     => $shipaddr->getPostcode(),
-                'country' => $shipaddr->getCountryId(),
+                'country' => $this->countryInformation->getCountryInfo($shipaddr->getCountryId())->getFullNameLocale(),
                 'state'   => $shipaddr->getRegion(),
                 'company' => $shipaddr->getCompany(),
             ]);

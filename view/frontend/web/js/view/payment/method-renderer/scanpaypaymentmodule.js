@@ -8,7 +8,6 @@ define(
     [
         'Magento_Checkout/js/view/payment/default',
         'Magento_Checkout/js/model/quote',
-        'Magento_Checkout/js/model/payment/additional-validators',
         'mage/storage',
         'Magento_Customer/js/model/customer',
         'Magento_Checkout/js/model/url-builder',
@@ -16,7 +15,7 @@ define(
         'Magento_Checkout/js/model/error-processor',
         'Magento_Checkout/js/action/select-payment-method'
     ],
-    function (Component, quote, additionalValidators, storage, customer, urlBuilder, fullScreenLoader, errorProcessor, selectPaymentMethod) {
+    function (Component, quote, storage, customer, urlBuilder, fullScreenLoader, errorProcessor, selectPaymentMethod) {
         'use strict';
 
         return Component.extend({
