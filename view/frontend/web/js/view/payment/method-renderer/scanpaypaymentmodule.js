@@ -20,7 +20,7 @@ define(
 
         return Component.extend({
             redirectAfterPlaceOrder: false,
-            
+
             defaults: {
                 template: 'Scanpay_PaymentModule/payment/form'
             },

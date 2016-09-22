@@ -41,7 +41,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             return;
         }
         $orderid = $order->getIncrementId();
-        
+
         /* Restore shopping cart (i.e. the quote) */
         $quote = $this->quote->loadByIdWithoutStore($order->getQuoteId());
         $quote->setIsActive(1)->setReservedOrderId(null)->save();
@@ -53,10 +53,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         $data = [
             'orderid' => $orderid,
             'items'   => [],
-        ];
-        /* Add billing address to data */
-        if (!empty($billaddr)) {
-            $data['billing'] = array_filter([
+            'billing' => array_filter([
                 'name'    => $billaddr->getName(),
                 'email'   => $billaddr->getEmail(),
                 'phone'   => preg_replace('/\s+/', '', $billaddr->getTelephone()),
@@ -67,13 +64,10 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
                 'state'   => $billaddr->getRegion(),
                 'company' => $billaddr->getCompany(),
                 'vatin'   => $billaddr->getVatId(),
-            //  'gln'     => ?,
-            ]);
-        }
-
-        /* Add shipping address to data */
-        if (!empty($shipaddr)) {
-            $data['shipping'] = array_filter([
+                'gln'     => '',
+            ]),
+            'shipping' => array_filter([
+                'name'    => $shipaddr->getName(),
                 'email'   => $shipaddr->getEmail(),
                 'phone'   => preg_replace('/\s+/', '', $shipaddr->getTelephone()),
                 'address' => $shipaddr->getStreet(),
@@ -82,38 +76,35 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
                 'country' => $this->countryInformation->getCountryInfo($shipaddr->getCountryId())->getFullNameLocale(),
                 'state'   => $shipaddr->getRegion(),
                 'company' => $shipaddr->getCompany(),
-            ]);
-        }
+            ]),
+        ];
 
         /* Add ordered items to data */
         $cur = $order->getOrderCurrencyCode();
         $orderItems = $this->order->getAllItems();
 
-        $tot = 0;
         foreach ($orderItems as $item) {
-
             $itemprice = $item->getPrice() + ($item->getTaxAmount() - $item->getDiscountAmount()) / $item->getQtyOrdered();
             if ($itemprice < 0) {
                 error_log('Cannot handle negative price for item');
                 echo json_encode(['error' => 'internal server error']);
                 return;
             }
-            $tot += $itemprice * $item->getQtyOrdered();
-            array_push($data['items'], [
+            $data['items'][] = [
                 'name' => $item->getName(),
                 'quantity' => intval($item->getQtyOrdered()),
-                'sku' => $item->getSku(),
                 'price' => (new Money($itemprice, $cur))->print(),
-            ]);
+                'sku' => $item->getSku(),
+            ];
         }
-        $shipprice = $order->getShippingAmount() + $order->getShippingTaxAmount() - $order->getShippingDiscountAmount();
-        if ($shipprice > 0) {
-            array_push($data['items'], [
-                'name' => 'Shipping: ' . $order->getShippingDescription(),
+        $shippingcost = $order->getShippingAmount() + $order->getShippingTaxAmount() - $order->getShippingDiscountAmount();
+        if ($shippingcost > 0) {
+            $method = $order->getShippingDescription();
+            $data['items'][] = [
+                'name' => isset($method) ? $method : 'Shipping',
                 'quantity' => 1,
-                'price' => (new Money($shipprice, $cur))->print(),
-            ]);
-            $tot += $shipprice;
+                'price' => (new Money($shippingcost, $cur))->print(),
+            ];
         }
         $apikey = trim($this->crypt->decrypt($this->scopeConfig->getValue('payment/scanpaypaymentmodule/apikey')));
         if (empty($apikey)) {
@@ -127,12 +118,19 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         ]);
         $paymenturl = '';
         try {
-            $paymenturl = $client->GetPaymentURL($data, ['cardholderIP' => $_SERVER['REMOTE_ADDR']]);
+            $paymenturl = $client->GetPaymentURL(array_filter($data), ['cardholderIP' => $_SERVER['REMOTE_ADDR']]);
         } catch (\Exception $e) {
             error_log('scanpay client exception: ' . $e->getMessage());
             echo json_encode(['error' => 'internal server error']);
             return;
         }
+        /* Empty quote now */
+        $quoteItems = $quote->getItemsCollection();
+        foreach ($quoteItems as $quoteItem) {
+            $quote->removeItem($quoteItem->getId());
+        }
+        $quote->save();
+
         $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
         $order->save();
         echo json_encode(['url' => $paymenturl], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
