@@ -51,9 +51,12 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         $shipaddr = $order->getShippingAddress();
 
         $data = [
-            'orderid' => $orderid,
-            'items'   => [],
-            'billing' => array_filter([
+            'orderid'  => $orderid,
+            'language' => $this->scopeConfig->getValue('payment/scanpaypaymentmodule/language'),
+            'items'    => [],
+        ];
+        if (!empty($billaddr)) {
+            $data['billing'] = array_filter([
                 'name'    => $billaddr->getName(),
                 'email'   => $billaddr->getEmail(),
                 'phone'   => preg_replace('/\s+/', '', $billaddr->getTelephone()),
@@ -65,8 +68,10 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
                 'company' => $billaddr->getCompany(),
                 'vatin'   => $billaddr->getVatId(),
                 'gln'     => '',
-            ]),
-            'shipping' => array_filter([
+            ]);
+        }
+        if (!empty($shipaddr)) {
+            $data['shipping'] = array_filter([
                 'name'    => $shipaddr->getName(),
                 'email'   => $shipaddr->getEmail(),
                 'phone'   => preg_replace('/\s+/', '', $shipaddr->getTelephone()),
@@ -76,8 +81,8 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
                 'country' => $this->countryInformation->getCountryInfo($shipaddr->getCountryId())->getFullNameLocale(),
                 'state'   => $shipaddr->getRegion(),
                 'company' => $shipaddr->getCompany(),
-            ]),
-        ];
+            ]);
+        }
 
         /* Add ordered items to data */
         $cur = $order->getOrderCurrencyCode();

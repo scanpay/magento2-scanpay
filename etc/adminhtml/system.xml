@@ -14,31 +14,19 @@
           <label>Enabled</label>
           <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
         </field>
-        <field id="title" translate="label" type="text" sortOrder="5" showInDefault="1" showInWebsite="1" showInStore="1">
+        <field id="title" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
           <label>Title</label>
         </field>
-        <field id="apikey" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="0">
+        <field id="language" translate="label" type="select" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="0">
+          <label>Language</label>
+          <source_model>Scanpay\PaymentModule\Model\Config\LanguageDropdown</source_model>
+          <comment>Set the payment window language. 'Automatic' allows Scanpay to choose a language based on the browser of the customer</comment>
+        </field>
+        <field id="apikey" translate="label" type="text" sortOrder="1000" showInDefault="1" showInWebsite="1" showInStore="0">
           <label>API-key</label>
           <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
         </field>
-        <!--
-        <field id="order_status" translate="label" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="0">
-          <label>New Order Status</label>
-          <source_model>Scanpay\PaymentModule\Model\Config\Source\Order\Status\Pendingpayment</source_model>
-        </field>
-        <field id="allowspecific" translate="label" type="allowspecific" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="0">
-          <label>Payment from Applicable Countries</label>
-          <source_model>Magento\Payment\Model\Config\Source\Allspecificcountries</source_model>
-        </field>
-        <field id="specificcountry" translate="label" type="multiselect" sortOrder="41" showInDefault="1" showInWebsite="1" showInStore="0">
-          <label>Payment from Specific Countries</label>
-          <source_model>Magento\Directory\Model\Config\Source\Country</source_model>
-          <can_be_empty>1</can_be_empty>
-        </field>
-        <field id="instructions" translate="label" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
-          <label>Instructions</label>
-        </field>-->
-        <field id="sort_order" translate="label" type="text" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="0">
+        <field id="sort_order" translate="label" type="text" sortOrder="10000" showInDefault="1" showInWebsite="1" showInStore="0">
           <label>Sort Order</label>
           <frontend_class>validate-number</frontend_class>
         </field>
