@@ -13,6 +13,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
     protected $countryInformation;
     protected $scopeConfig;
     protected $crypt;
+    protected $urlHelper;
 
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
@@ -22,7 +23,8 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         \Magento\Checkout\Model\Session $checkoutSession,
         \Magento\Directory\Api\CountryInformationAcquirerInterface $countryInformation,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Magento\Framework\Encryption\Encryptor $crypt
+        \Magento\Framework\Encryption\Encryptor $crypt,
+        \Magento\Framework\Url $urlHelper
     ) {
         parent::__construct($context);
         $this->request = $request;
@@ -32,6 +34,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         $this->countryInformation = $countryInformation;
         $this->scopeConfig = $scopeConfig;
         $this->crypt = $crypt;
+        $this->urlHelper = $urlHelper;
     }
 
     public function execute() {
@@ -46,15 +49,15 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         $quote = $this->quote->loadByIdWithoutStore($order->getQuoteId());
         $quote->setIsActive(1)->setReservedOrderId(null)->save();
         $this->checkoutSession->replaceQuote($quote);
-
+        $baseUrl = $this->urlHelper->getBaseUrl();
+        $data = [
+            'orderid'    => $orderid,
+            'language'   => $this->scopeConfig->getValue('payment/scanpaypaymentmodule/language'),
+            'successurl' => $baseUrl . '/checkout/onepage/success',
+            'items'      => [],
+        ];
         $billaddr = $order->getBillingAddress();
         $shipaddr = $order->getShippingAddress();
-
-        $data = [
-            'orderid'  => $orderid,
-            'language' => $this->scopeConfig->getValue('payment/scanpaypaymentmodule/language'),
-            'items'    => [],
-        ];
         if (!empty($billaddr)) {
             $data['billing'] = array_filter([
                 'name'    => $billaddr->getName(),
