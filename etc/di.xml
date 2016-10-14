@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <virtualType name="ScanpayAdapter" type="Magento\Payment\Model\Method\Adapter">
+        <arguments>
+            <argument name="code" xsi:type="const">\Scanpay\PaymentModule\Model\Config\ConfigProvider::CODE</argument>
+            <argument name="formBlockType" xsi:type="object">Magento\Payment\Block\Form\Cc</argument>
+            <argument name="infoBlockType" xsi:type="object">Magento\Payment\Block\Info\Cc</argument>
+            <argument name="valueHandlerPool" xsi:type="object">ScanpayValueHandlerPool</argument>
+            <argument name="validatorPool" xsi:type="object">ScanpayValidatorPool</argument>
+            <argument name="commandPool" xsi:type="object">ScanpayCommandPool</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="ScanpayConfig" type="Magento\Payment\Gateway\Config\Config">
+        <arguments>
+            <argument name="methodCode" xsi:type="const">\Scanpay\PaymentModule\Model\Config\ConfigProvider::CODE</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="ScanpayConfigValueHandler" type="Magento\Payment\Gateway\Config\ConfigValueHandler">
+        <arguments>
+            <argument name="configInterface" xsi:type="object">ScanpayConfig</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="ScanpayValueHandlerPool" type="Magento\Payment\Gateway\Config\ValueHandlerPool">
+        <arguments>
+            <argument name="handlers" xsi:type="array">
+                <item name="default" xsi:type="string">ScanpayConfigValueHandler</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="ScanpayValidatorPool" type="Magento\Payment\Gateway\Validator\ValidatorPool">
+        <arguments>
+            <argument name="validators" xsi:type="array">
+            </argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="ScanpayCommandPool" type="Magento\Payment\Gateway\Command\CommandPool">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+            </argument>
+        </arguments>
+    </virtualType>
+</config>
