@@ -18,7 +18,7 @@ final class ConfigProvider implements ConfigProviderInterface
         return [
             'payment' => [
                 self::CODE => [
-                    'apikey' =>  $this->method->getConfigData('apikey'),
+                    'test' =>  'test123',
                 ]
             ]
         ];
