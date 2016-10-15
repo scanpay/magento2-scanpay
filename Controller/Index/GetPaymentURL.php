@@ -1,54 +1,50 @@
 <?php
 
 namespace Scanpay\PaymentModule\Controller\Index;
+
 use Scanpay\PaymentModule\Model\ScanpayClient;
 use Scanpay\PaymentModule\Model\Money;
 
 class GetPaymentURL extends \Magento\Framework\App\Action\Action
 {
-    protected $request;
-    protected $order;
-    protected $quote;
-    protected $checkoutSession;
-    protected $countryInformation;
-    protected $scopeConfig;
-    protected $crypt;
-    protected $urlHelper;
+    private $order;
+    private $logger;
+    private $countryInformation;
+    private $scopeConfig;
+    private $crypt;
+    private $urlHelper;
+    private $remoteAddress;
 
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
-        \Magento\Framework\App\Request\Http $request,
+        \Psr\Log\LoggerInterface $logger,
         \Magento\Sales\Model\Order $order,
-        \Magento\Quote\Model\Quote $quote,
-        \Magento\Checkout\Model\Session $checkoutSession,
         \Magento\Directory\Api\CountryInformationAcquirerInterface $countryInformation,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Framework\Encryption\Encryptor $crypt,
-        \Magento\Framework\Url $urlHelper
-    ) {
+        \Magento\Framework\Url $urlHelper,
+        \Magento\Framework\HTTP\PhpEnvironment\RemoteAddress $remoteAddress
+    )
+    {
         parent::__construct($context);
-        $this->request = $request;
+        $this->logger = $logger;
         $this->order = $order;
-        $this->quote = $quote;
-        $this->checkoutSession = $checkoutSession;
         $this->countryInformation = $countryInformation;
         $this->scopeConfig = $scopeConfig;
         $this->crypt = $crypt;
         $this->urlHelper = $urlHelper;
+        $this->remoteAddress = $remoteAddress;
     }
 
-    public function execute() {
-        $order = $this->order->load($this->request->getParam('orderid'));
+    public function execute()
+    {
+        $order = $this->order->load($this->getRequest()->getParam('orderid'));
         if (!$order->getId()) {
-            echo json_encode(['error' => 'order not found'], JSON_UNESCAPED_UNICODE);
+            $this->getResponse()->setContent(json_encode(['error' => 'order not found']));
             return;
         }
-        $orderid = $order->getIncrementId();
 
-        /* Restore shopping cart (i.e. the quote) */
-        $quote = $this->quote->loadByIdWithoutStore($order->getQuoteId());
-        $quote->setIsActive(1)->setReservedOrderId(null)->save();
-        $this->checkoutSession->replaceQuote($quote);
+        $orderid = $order->getIncrementId();
         $baseUrl = $this->urlHelper->getBaseUrl();
         $data = [
             'orderid'    => $orderid,
@@ -73,6 +69,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
                 'gln'     => '',
             ]);
         }
+
         if (!empty($shipaddr)) {
             $data['shipping'] = array_filter([
                 'name'    => $shipaddr->getName(),
@@ -92,12 +89,15 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         $orderItems = $this->order->getAllItems();
 
         foreach ($orderItems as $item) {
-            $itemprice = $item->getPrice() + ($item->getTaxAmount() - $item->getDiscountAmount()) / $item->getQtyOrdered();
+            $itemprice = $item->getPrice() + ($item->getTaxAmount() - 
+                $item->getDiscountAmount()) / $item->getQtyOrdered();
+
             if ($itemprice < 0) {
-                error_log('Cannot handle negative price for item');
-                echo json_encode(['error' => 'internal server error']);
+                $this->logger->error('Cannot handle negative price for item');
+                $this->getResponse()->setContent(json_encode(['error' => 'internal server error']));
                 return;
             }
+
             $data['items'][] = [
                 'name' => $item->getName(),
                 'quantity' => intval($item->getQtyOrdered()),
@@ -105,7 +105,10 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
                 'sku' => $item->getSku(),
             ];
         }
-        $shippingcost = $order->getShippingAmount() + $order->getShippingTaxAmount() - $order->getShippingDiscountAmount();
+
+        $shippingcost = $order->getShippingAmount() + $order->getShippingTaxAmount() -
+            $order->getShippingDiscountAmount();
+
         if ($shippingcost > 0) {
             $method = $order->getShippingDescription();
             $data['items'][] = [
@@ -114,34 +117,29 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
                 'price' => (new Money($shippingcost, $cur))->print(),
             ];
         }
+
         $apikey = trim($this->crypt->decrypt($this->scopeConfig->getValue('payment/scanpaypaymentmodule/apikey')));
         if (empty($apikey)) {
-            error_log('Missing API key in scanpay payment method configuration');
-            echo json_encode(['error' => 'internal server error']);
+            $this->logger->error('Missing API key in scanpay payment method configuration');
+            $this->getResponse()->setContent(json_encode(['error' => 'internal server error']));
             return;
         }
-        $client = new ScanpayClient([
-            'host' => 'api.scanpay.dk',
-            'apikey' => $apikey,
-        ]);
+
+        $client = new ScanpayClient([ 'host' => 'api.scanpay.dk', 'apikey' => $apikey ]);
         $paymenturl = '';
         try {
-            $paymenturl = $client->GetPaymentURL(array_filter($data), ['cardholderIP' => $_SERVER['REMOTE_ADDR']]);
-        } catch (\Exception $e) {
-            error_log('scanpay client exception: ' . $e->getMessage());
-            echo json_encode(['error' => 'internal server error']);
+            $opts = ['cardholderIP' => $this->remoteAddress->getRemoteAddress()];
+            $paymenturl = $client->getPaymentURL(array_filter($data), $opts);
+        } catch (\Magento\Framework\Exception\LocalizedException $e) {
+            $this->logger->error('scanpay client exception: ' . $e->getMessage());
+            $this->getResponse()->setContent(json_encode(['error' => 'internal server error']));
             return;
         }
-        /* Empty quote now */
-        $quoteItems = $quote->getItemsCollection();
-        foreach ($quoteItems as $quoteItem) {
-            $quote->removeItem($quoteItem->getId());
-        }
-        $quote->save();
 
         $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
         $order->save();
-        echo json_encode(['url' => $paymenturl], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $res = json_encode(['url' => $paymenturl], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $this->getResponse()->setContent($res);
     }
 
 }
