@@ -1,8 +1,9 @@
 <?php
 namespace Scanpay\PaymentModule\Model;
 
-class Money {
-    protected static $currencies = [
+class Money
+{
+    private static $currencies = [
         'AED' => [ 784,  2, 'UAE Dirham' ],
         'AFN' => [ 971,  2, 'Afghani' ],
         'ALL' => [   8,  2, 'Lek' ],
@@ -183,24 +184,32 @@ class Money {
         'ZWL' => [ 932,  2, 'Zimbabwe Dollar' ],
     ];
 
-    protected $amount;
-    protected $currency;
+    private $amount;
+    private $currency;
 
-    public function __construct($amount, $currency) {
+    public function __construct($amount, $currency)
+    {
         $currency = strtoupper($currency);
         if (!array_key_exists($currency, Money::$currencies)) {
-            throw new \Exception('invalid currency ' . $currency);
+            throw new \Magento\Framework\Exception\LocalizedException(__('invalid currency ' . $currency));
         }
+
         $curObj = Money::$currencies[$currency];
         $prec = $curObj[1];
-        if ($prec < 0) { $prec = 0; }
+        if ($prec < 0) {
+            $prec = 0;
+        }
         $this->amount = round($amount, $prec);
         $this->currency = $currency;
     }
-    public function __toString() {
+
+    public function __toString()
+    {
         return $this->amount . ' ' . $this->currency;
     }
-    public function print() {
+
+    public function print()
+    {
         return (string)$this;
     }
 }
