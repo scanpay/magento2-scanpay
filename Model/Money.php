@@ -1,4 +1,5 @@
 <?php
+
 namespace Scanpay\PaymentModule\Model;
 
 class Money
@@ -199,6 +200,7 @@ class Money
         if ($prec < 0) {
             $prec = 0;
         }
+
         $this->amount = round($amount, $prec);
         $this->currency = $currency;
     }
