@@ -9,7 +9,6 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
 {
     private $order;
     private $logger;
-    private $countryInformation;
     private $scopeConfig;
     private $crypt;
     private $urlHelper;
@@ -19,17 +18,14 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         \Magento\Framework\App\Action\Context $context,
         \Psr\Log\LoggerInterface $logger,
         \Magento\Sales\Model\Order $order,
-        \Magento\Directory\Api\CountryInformationAcquirerInterface $countryInformation,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Framework\Encryption\Encryptor $crypt,
         \Magento\Framework\Url $urlHelper,
         \Magento\Framework\HTTP\PhpEnvironment\RemoteAddress $remoteAddress
-    )
-    {
+    ) {
         parent::__construct($context);
         $this->logger = $logger;
         $this->order = $order;
-        $this->countryInformation = $countryInformation;
         $this->scopeConfig = $scopeConfig;
         $this->crypt = $crypt;
         $this->urlHelper = $urlHelper;
@@ -62,7 +58,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
                 'address' => $billaddr->getStreet(),
                 'city'    => $billaddr->getCity(),
                 'zip'     => $billaddr->getPostcode(),
-                'country' => $this->countryInformation->getCountryInfo($billaddr->getCountryId())->getFullNameLocale(),
+                'country' => $billaddr->getCountryId(),
                 'state'   => $billaddr->getRegion(),
                 'company' => $billaddr->getCompany(),
                 'vatin'   => $billaddr->getVatId(),
@@ -78,7 +74,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
                 'address' => $shipaddr->getStreet(),
                 'city'    => $shipaddr->getCity(),
                 'zip'     => $shipaddr->getPostcode(),
-                'country' => $this->countryInformation->getCountryInfo($shipaddr->getCountryId())->getFullNameLocale(),
+                'country' => $shipaddr->getCountryId(),
                 'state'   => $shipaddr->getRegion(),
                 'company' => $shipaddr->getCompany(),
             ]);
@@ -89,7 +85,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         $orderItems = $this->order->getAllItems();
 
         foreach ($orderItems as $item) {
-            $itemprice = $item->getPrice() + ($item->getTaxAmount() - 
+            $itemprice = $item->getPrice() + ($item->getTaxAmount() -
                 $item->getDiscountAmount()) / $item->getQtyOrdered();
 
             if ($itemprice < 0) {
@@ -100,7 +96,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
 
             $data['items'][] = [
                 'name' => $item->getName(),
-                'quantity' => intval($item->getQtyOrdered()),
+                'quantity' => (int)$item->getQtyOrdered(),
                 'price' => (new Money($itemprice, $cur))->print(),
                 'sku' => $item->getSku(),
             ];
@@ -141,5 +137,4 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         $res = json_encode(['url' => $paymenturl], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $this->getResponse()->setContent($res);
     }
-
 }
