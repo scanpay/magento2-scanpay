@@ -7,7 +7,7 @@ First you must install the module and then you must configure it.
 ## Installation
 There are multiple ways to install this module:
 
-- Clone this git repository into app/code/Scanpay/PaymentModule in your Magento directory.
+- Clone this git repository into app/code/scanpay/payment-module in your Magento directory.
 - Install the module using the composer CLI `~$ composer require scanpay/paymentmodule`
 
 ## Configuration
