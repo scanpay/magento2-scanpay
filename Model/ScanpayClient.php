@@ -26,7 +26,8 @@ class ScanpayClient
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         if (isset($opts['cardholderIP'])) {
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-Cardholder-Ip: ' . $opts['cardholderIP']]);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-Cardholder-Ip: ' . $opts['cardholderIP'],
+                                                  'X-Shop-System: Magento 2']);
         }
 
         $result = curl_exec($ch);

@@ -1,0 +1,54 @@
+<style>
+.scanpay--pingurl--status > div {
+    position: relative;
+    margin-bottom: 3px;
+    padding: 10px 10px 10px 26px;
+    text-align: left;
+    font-size: 13px;
+    padding-top: 5px;
+}
+.scanpay--pingurl--status--ok { background: #dff0d8; border-left: 5px #3c763d solid; }
+.scanpay--pingurl--status--warning { background: #fff4cc; border-left: 5px #ffe070 solid; }
+.scanpay--pingurl--status--error { background: #fad7d4; border-left: 5px #f08a81 solid; }
+
+.scanpay--pingurl--status h4:before {
+    display: inline-block;
+    position: absolute;
+    content: '\26a0';
+    left: 3px;
+    width: 18px;
+    height: 18px;
+}
+
+.scanpay--pingurl--status--ok h4:before {
+    content: '\2713';
+}
+
+.scanpay--pingurl--status h4 {
+    font-size: 15px !important;
+    padding: 0 !important;
+}
+</style>
+
+<div class="scanpay--pingurl pp-buttons-container">
+  <input type="text" value="<?php echo $block->getPingUrl() ?>" style="cursor: pointer"
+         onfocus="this.select();" onmouseup="return false;" >
+  <div class="scanpay--pingurl--status">
+    <div class="scanpay--pingurl--status--ok">
+      <h4>Ok!</h4>
+      <p>Received last notification 4 minutes ago</p>
+    </div>
+    <div class="scanpay--pingurl--status--warning">
+      <h4>Warning!</h4>
+      <p>Received last notification 15 minutes ago, check that the url above matches the <a href="https://dashboard.scanpay.dk/settings/api">Scanpay dashboard</a>.</p>
+    </div>
+    <div class="scanpay--pingurl--status--error">
+      <h4>Possible error!</h4>
+      <p>Received notifications received 5 hours ago, check that the url above matches the <a href="https://dashboard.scanpay.dk/settings/api">Scanpay dashboard</a></p>
+    </div>
+    <div class="scanpay--pingurl--status--error">
+      <h4>Error!</h4>
+      <p>Never received notifications, check that the url above matches the <a href="https://dashboard.scanpay.dk/settings/api">Scanpay dashboard</a>.</p>
+    </div>
+  </div>
+</div>
