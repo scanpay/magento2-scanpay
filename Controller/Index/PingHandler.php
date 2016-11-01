@@ -10,17 +10,19 @@ class PingHandler extends \Magento\Framework\App\Action\Action
     private $logger;
     private $scopeConfig;
     private $crypt;
-    private $urlHelper;
-    private $remoteAddress;
+    private $sequencer;
 
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Magento\Framework\Encryption\Encryptor $crypt
+        \Magento\Framework\Encryption\Encryptor $crypt,
+        \Scanpay\PaymentModule\Model\GlobalSequencer $sequencer,
+        \Scanpay\PaymentModule\Model\OrderUpdater $orderUpdater
     ) {
         parent::__construct($context);
         $this->scopeConfig = $scopeConfig;
         $this->crypt = $crypt;
+        $this->$seqHandler = $seqHandler;
     }
 
     public function execute()
@@ -34,18 +36,22 @@ class PingHandler extends \Magento\Framework\App\Action\Action
             $this->getResponse()->setContent(json_encode(['error' => 'internal server error']));
             return;
         }
+
         $localSig = base64_encode(hash_hmac('sha256', $reqBody, $apikey, true));
         if ($localSig !== $req->getHeader('X-Signature')) { 
             $this->getResponse()->setContent(json_encode(['error' => 'invalid signature']));
             return;
         }
 
-        $jsonres = @json_decode($reqBody);
-        if ($jsonres === null) {
+        $jsonreq = @json_decode($reqBody);
+        if ($jsonreq === null) {
             $this->getResponse()->setContent(json_encode(['error' => 'invalid json']));
             return;
-//            throw new LocalizedException(__('unable to json-decode response'));
         }
-
+        if (!isset($jsonres->seq)) { return; }
+        $oldSeq = $sequencer->load($jsonreq->seq);
+        /* Do stuff if... */
+        
+        $sequencer->save($jsonreq->seq);
     }
 }
