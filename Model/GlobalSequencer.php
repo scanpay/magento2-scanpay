@@ -35,14 +35,22 @@ class GlobalSequencer
         /* If there were 0 affected rows, it might be because the row somehow was not created.
            Lets try to insert the row then (if it was because the seq condition failed, the insert
            will fail anyway )*/
-        if ($ret == 0) { $this->init(); return false; }
+        if (!$ret) { $this->init(); return false; }
         return true;
     }
 
     public function load()
     {
         $select = $this->dbConnection->select()->from($this->tableName)->where('key = seq');
-        return $result = $this->dbConnection->fetchRow($select);
+        $row = $this->dbConnection->fetchRow($select);
+        if (!$row) {
+            $this->init();
+            return false;
+        }
+        if (!isset($row['value']) || !isset($row['mtime'])) {
+            return false;
+        }
+        return [ 'seq' => $row['value'], 'mtime' => $row['mtime'] ];
     }
 
 }

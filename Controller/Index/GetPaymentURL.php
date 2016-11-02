@@ -2,7 +2,6 @@
 
 namespace Scanpay\PaymentModule\Controller\Index;
 
-use Scanpay\PaymentModule\Model\ScanpayClient;
 use Scanpay\PaymentModule\Model\Money;
 
 class GetPaymentURL extends \Magento\Framework\App\Action\Action
@@ -13,23 +12,24 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
     private $crypt;
     private $urlHelper;
     private $remoteAddress;
+    private $client;
 
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
         \Psr\Log\LoggerInterface $logger,
         \Magento\Sales\Model\Order $order,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Magento\Framework\Encryption\Encryptor $crypt,
         \Magento\Framework\Url $urlHelper,
-        \Magento\Framework\HTTP\PhpEnvironment\RemoteAddress $remoteAddress
+        \Magento\Framework\HTTP\PhpEnvironment\RemoteAddress $remoteAddress,
+        \Scanpay\PaymentModule\Model\ScanpayClient $client
     ) {
         parent::__construct($context);
         $this->logger = $logger;
         $this->order = $order;
         $this->scopeConfig = $scopeConfig;
-        $this->crypt = $crypt;
         $this->urlHelper = $urlHelper;
         $this->remoteAddress = $remoteAddress;
+        $this->client = $client;
     }
 
     public function execute()
@@ -114,18 +114,9 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             ];
         }
 
-        $apikey = trim($this->crypt->decrypt($this->scopeConfig->getValue('payment/scanpaypaymentmodule/apikey')));
-        if (empty($apikey)) {
-            $this->logger->error('Missing API key in scanpay payment method configuration');
-            $this->getResponse()->setContent(json_encode(['error' => 'internal server error']));
-            return;
-        }
-
-        $client = new ScanpayClient([ 'host' => 'api.scanpay.dk', 'apikey' => $apikey ]);
-        $paymenturl = '';
         try {
             $opts = ['cardholderIP' => $this->remoteAddress->getRemoteAddress()];
-            $paymenturl = $client->getPaymentURL(array_filter($data), $opts);
+            $paymenturl = $this->client->getPaymentURL(array_filter($data), $opts);
         } catch (\Magento\Framework\Exception\LocalizedException $e) {
             $this->logger->error('scanpay client exception: ' . $e->getMessage());
             $this->getResponse()->setContent(json_encode(['error' => 'internal server error']));
