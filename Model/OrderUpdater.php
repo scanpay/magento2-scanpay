@@ -16,8 +16,8 @@ class OrderUpdater
         \Magento\Sales\Model\Order\Payment\Transaction\BuilderInterface $trnBuilder
     ) {
         $this->order = $order;
-        $this->$orderSender = $orderSender;
-        $this->$trnBuilder = $trnBuilder;
+        $this->orderSender = $orderSender;
+        $this->trnBuilder = $trnBuilder;
     }
 
     public function dataIsValid($data)
@@ -48,7 +48,7 @@ class OrderUpdater
         $payment->setLastTransId($trnId);
         $payment->setTransactionId($trnId);
 
-        $transaction = $this->$trnBuilder->setPayment($payment)->setOrder($order)
+        $transaction = $this->trnBuilder->setPayment($payment)->setOrder($order)
             ->setTransactionId($paymentData['id'])->setFailSafe(true)
             ->build(\Magento\Sales\Model\Order\Payment\Transaction::TYPE_AUTH);
         $payment->addTransactionCommentsToOrder($transaction, __('The authorized amount is %1.', $data['totals']['authorized']));
