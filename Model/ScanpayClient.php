@@ -67,7 +67,7 @@ class ScanpayClient
             if ($code === 403) {
                 throw new LocalizedException(__('Invalid API-key'));
             }
-            throw new LocalizedException(__('Unexpected http response code: ' . $code));
+            throw new LocalizedException(__('Unexpected http code: ' . $code . ' from ' . $url));
         }
 
         /* Attempt to decode the json response */

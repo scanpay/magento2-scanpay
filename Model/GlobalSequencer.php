@@ -54,7 +54,7 @@ class GlobalSequencer
         if (!isset($row['value']) || !isset($row['mtime'])) {
             return false;
         }
-        return [ 'seq' => $row['value'], 'mtime' => $row['mtime'] ];
+        return [ 'seq' => (int)$row['value'], 'mtime' => $row['mtime'] ];
     }
 
 }
