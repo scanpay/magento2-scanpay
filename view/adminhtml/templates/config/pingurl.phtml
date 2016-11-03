@@ -1,15 +1,29 @@
 <style>
 .scanpay--pingurl--status > div {
+    display: none;
     position: relative;
-    margin-bottom: 3px;
+    margin-top: 3px;
     padding: 10px 10px 10px 26px;
     text-align: left;
     font-size: 13px;
     padding-top: 5px;
 }
-.scanpay--pingurl--status--ok { background: #dff0d8; border-left: 5px #3c763d solid; }
-.scanpay--pingurl--status--warning { background: #fff4cc; border-left: 5px #ffe070 solid; }
-.scanpay--pingurl--status--error { background: #fad7d4; border-left: 5px #f08a81 solid; }
+.scanpay--pingurl--ok .scanpay--pingurl--ok {
+    display: block;
+    background: #dff0d8;
+    border-left: 5px #3c763d solid;
+}
+.scanpay--pingurl--warning .scanpay--pingurl--warning,
+.scanpay--pingurl--never--pinged .scanpay--pingurl--never--pinged {
+    display: block;
+    background: #fff4cc;
+    border-left: 5px #ffe070 solid;
+}
+.scanpay--pingurl--error .scanpay--pingurl--error {
+    display: block;
+    background: #fad7d4;
+    border-left: 5px #f08a81 solid;
+}
 
 .scanpay--pingurl--status h4:before {
     display: inline-block;
@@ -20,7 +34,7 @@
     height: 18px;
 }
 
-.scanpay--pingurl--status--ok h4:before {
+.scanpay--pingurl--status .scanpay--pingurl--ok h4:before {
     content: '\2713';
 }
 
@@ -33,22 +47,22 @@
 <div class="scanpay--pingurl pp-buttons-container">
   <input type="text" value="<?php echo $block->getPingUrl() ?>" style="cursor: pointer"
          onfocus="this.select();" onmouseup="return false;" >
-  <div class="scanpay--pingurl--status">
-    <div class="scanpay--pingurl--status--ok">
+  <div class="scanpay--pingurl--status <?php echo $block->getStatusClass() ?>">
+    <div class="scanpay--pingurl--ok">
       <h4>Ok!</h4>
-      <p>Received last notification 4 minutes ago</p>
+      <p>Received last ping <?php echo $block->getPingDt() ?></p>
     </div>
-    <div class="scanpay--pingurl--status--warning">
+    <div class="scanpay--pingurl--warning">
       <h4>Warning!</h4>
-      <p>Received last notification 15 minutes ago, check that the url above matches the <a href="https://dashboard.scanpay.dk/settings/api">Scanpay dashboard</a>.</p>
+      <p>Received last ping <?php echo $block->getPingDt() ?>, please check that the URL above matches the URL set in <a href="https://dashboard.scanpay.dk/settings/api">Scanpay dashboard</a>.</p>
     </div>
-    <div class="scanpay--pingurl--status--error">
-      <h4>Possible error!</h4>
-      <p>Received notifications received 5 hours ago, check that the url above matches the <a href="https://dashboard.scanpay.dk/settings/api">Scanpay dashboard</a></p>
-    </div>
-    <div class="scanpay--pingurl--status--error">
+    <div class="scanpay--pingurl--error">
       <h4>Error!</h4>
-      <p>Never received notifications, check that the url above matches the <a href="https://dashboard.scanpay.dk/settings/api">Scanpay dashboard</a>.</p>
+      <p>Received last ping <?php echo $block->getPingDt() ?>, please check that the URL above matches the URL set in <a href="https://dashboard.scanpay.dk/settings/api">Scanpay dashboard</a></p>
+    </div>
+    <div class="scanpay--pingurl--never--pinged">
+      <h4>Awaiting pings!</h4>
+      <p>Never received any pings from Scanpay, please check that the URL above matches the URL set in <a href="https://dashboard.scanpay.dk/settings/api">Scanpay dashboard</a>.</p>
     </div>
   </div>
 </div>

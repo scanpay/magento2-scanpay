@@ -18,7 +18,7 @@ class GlobalSequencer
     }
 
     public function init() {
-        $data = [ 'var' => 'seq', 'value' => 0, 'mtime' => time() ];
+        $data = [ 'var' => 'seq', 'value' => 0, 'mtime' => 0 ];
         $this->dbConnection->insert($this->tableName, $data);
     }
 
