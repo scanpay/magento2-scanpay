@@ -11,10 +11,12 @@ class PingHandler extends \Magento\Framework\App\Action\Action
     private $scopeConfig;
     private $crypt;
     private $sequencer;
+    private $orderUpdater;
     private $client;
 
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
+        \Psr\Log\LoggerInterface $logger,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Framework\Encryption\Encryptor $crypt,
         \Scanpay\PaymentModule\Model\GlobalSequencer $sequencer,
@@ -22,6 +24,7 @@ class PingHandler extends \Magento\Framework\App\Action\Action
         \Scanpay\PaymentModule\Model\ScanpayClient $client
     ) {
         parent::__construct($context);
+        $this->logger = $logger;
         $this->scopeConfig = $scopeConfig;
         $this->crypt = $crypt;
         $this->sequencer = $sequencer;
@@ -50,20 +53,27 @@ class PingHandler extends \Magento\Framework\App\Action\Action
             return;
         }
 
-        if (!isset($jsonreq['seq'])) { return; }
         $remoteSeq = $jsonreq['seq'];
-        $localSeq = $this->sequencer->load();
-        if (!$localSeq) {
+        if (!isset($remoteSeq) || !is_int($remoteSeq)) { return; }
+        $localSeqObj = $this->sequencer->load();
+        if (!$localSeqObj) {
             $this->logger->error('unable to load scanpay sequence number');
             return;
         }
+    
+        $localSeq = $localSeqObj['seq'];
 
-        return;
         while ($localSeq < $remoteSeq) {
+            $this->getResponse()->setContent('doreq');
             /* Do req */
-            $resobj = $client->getUpdatedTransactions($localSeq);
+            try {
+                $resobj = $this->client->getUpdatedTransactions($localSeq);
+            } catch (\Magento\Framework\Exception\LocalizedException $e) {
+                $this->logger->error('scanpay client exception: ' . $e->getMessage());
+                return;
+            }
             $localSeq = $resobj['seq'];
-            if (!$orderUpdater->updateAll($jsonreq['seq'], $resobj['changes'])) {
+            if (!$orderUpdater->updateAll($remoteSeq, $resobj['changes'])) {
                 $this->logger->error('error updating orders with Scanpay changes');
                 return;
             }
