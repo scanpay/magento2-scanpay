@@ -55,6 +55,7 @@ class PingHandler extends \Magento\Framework\App\Action\Action
 
         $remoteSeq = $jsonreq['seq'];
         if (!isset($remoteSeq) || !is_int($remoteSeq)) { return; }
+
         $localSeqObj = $this->sequencer->load();
         if (!$localSeqObj) {
             $this->logger->error('unable to load scanpay sequence number');
@@ -72,11 +73,13 @@ class PingHandler extends \Magento\Framework\App\Action\Action
                 $this->logger->error('scanpay client exception: ' . $e->getMessage());
                 return;
             }
+
             $localSeq = $resobj['seq'];
             if (!$orderUpdater->updateAll($remoteSeq, $resobj['changes'])) {
                 $this->logger->error('error updating orders with Scanpay changes');
                 return;
             }
+
             if (!$this->sequencer->save($localSeq)) {
                 return;
             }
