@@ -2,34 +2,32 @@
 
 namespace Scanpay\PaymentModule\Setup;
  
-use Magento\Framework\Setup\InstallSchemaInterface;
+use Magento\Framework\Setup\UpgradeSchemaInterface;
 use Magento\Framework\Setup\ModuleContextInterface;
 use Magento\Framework\Setup\SchemaSetupInterface;
 use Magento\Framework\DB\Ddl\Table;
  
-class InstallSchema implements InstallSchemaInterface
+class UpgradeSchema implements UpgradeSchemaInterface
 {
-    public function install(SchemaSetupInterface $setup, ModuleContextInterface $context)
+    public function upgrade(SchemaSetupInterface $setup, ModuleContextInterface $context)
     {
-        $installer = $setup;
-        $installer->startSetup();
+        $setup->startSetup();
  
         // Get tutorial_simplenews table
-        $tableName = $installer->getTable('scanpay_variables');
+        $tableName = $setup->getTable('scanpay_variables');
         // Check if the table already exists
-        if ($installer->getConnection()->isTableExists($tableName) != true) {
+        if ($setup->getConnection()->isTableExists($tableName) != true) {
             // Create tutorial_simplenews table
-            $table = $installer->getConnection()
+            $table = $setup->getConnection()
                 ->newTable($tableName)
                 ->addColumn(
                     'key',
                     Table::TYPE_TEXT,
-                    null,
+                    255,
                     [
-                        'identity' => true,
-                        'unsigned' => true,
-                        'nullable' => false,
-                        'primary' => true
+                        'auto_increment' => false,
+                        'nullable'       => false,
+                        'primary'        => true
                     ],
                     'Key'
                 )
@@ -50,9 +48,9 @@ class InstallSchema implements InstallSchemaInterface
                 ->setComment('Scanpay Variables Key-Value Store')
                 ->setOption('type', 'InnoDB')
                 ->setOption('charset', 'utf8');
-            $installer->getConnection()->createTable($table);
+            $setup->getConnection()->createTable($table);
         }
  
-        $installer->endSetup();
+        $setup->endSetup();
     }
 }
