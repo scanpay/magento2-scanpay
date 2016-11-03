@@ -24,7 +24,7 @@ class PingHandler extends \Magento\Framework\App\Action\Action
         parent::__construct($context);
         $this->scopeConfig = $scopeConfig;
         $this->crypt = $crypt;
-        $this->$seqHandler = $seqHandler;
+        $this->sequencer = $sequencer;
         $this->client = $client;
     }
 
@@ -49,24 +49,25 @@ class PingHandler extends \Magento\Framework\App\Action\Action
             $this->logger->error('Received invalid json from Scanpay server');
             return;
         }
-        if (!isset($jsonreq['seq'])) { return; }
 
+        if (!isset($jsonreq['seq'])) { return; }
         $remoteSeq = $jsonreq['seq'];
-        $localSeq = $sequencer->load();
+        $localSeq = $this->sequencer->load();
         if (!$localSeq) {
             $this->logger->error('unable to load scanpay sequence number');
             return;
         }
 
+        return;
         while ($localSeq < $remoteSeq) {
             /* Do req */
             $resobj = $client->getUpdatedTransactions($localSeq);
             $localSeq = $resobj['seq'];
-            if (!$orderUpdater->updateAll($jsonreq->$seq, $resobj['changes'])) {
+            if (!$orderUpdater->updateAll($jsonreq['seq'], $resobj['changes'])) {
                 $this->logger->error('error updating orders with Scanpay changes');
                 return;
             }
-            if (!$sequencer->save($localSeq)) {
+            if (!$this->sequencer->save($localSeq)) {
                 return;
             }
         }

@@ -21,7 +21,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
             $table = $setup->getConnection()
                 ->newTable($tableName)
                 ->addColumn(
-                    'key',
+                    'var',
                     Table::TYPE_TEXT,
                     255,
                     [
@@ -29,20 +29,26 @@ class UpgradeSchema implements UpgradeSchemaInterface
                         'nullable'       => false,
                         'primary'        => true
                     ],
-                    'Key'
+                    'Variable'
                 )
                 ->addColumn(
                     'value',
                     Table::TYPE_TEXT,
                     null,
-                    ['nullable' => false, 'default' => ''],
+                    [
+                        'nullable' => false,
+                        'default' => ''
+                    ],
                     'Value'
                 )
                 ->addColumn(
                     'mtime',
                     Table::TYPE_BIGINT,
                     null,
-                    ['nullable' => false, 'default' => 0],
+                    [
+                        'nullable' => false,
+                        'default' => 0
+                    ],
                     'Modification Time'
                 )
                 ->setComment('Scanpay Variables Key-Value Store')
