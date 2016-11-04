@@ -31,6 +31,12 @@ class OrderUpdater
 
     public function update($seq, $data)
     {
+        /* Ignore errornous transactions */
+        if (isset($data['error'])) {
+            $this->logger->error('Received error entry in seq upater: ' . $data['error']);
+            return true;
+        }
+
         if (!$this->dataIsValid($data)) {
             $this->logger->error('Received invalid order data from Scanpay');
             return false;
@@ -41,9 +47,11 @@ class OrderUpdater
         if (!$order->getId()) {
             return true;
         }
+
         if (!$order->getEmailSent()) {
             $this->orderSender->send($order);
         }
+
         $oldSeq = $order->getScanpaySeq();
         if (isset($oldSeq) && $oldSeq >= $seq) { return; }
 
