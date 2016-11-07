@@ -3,6 +3,7 @@
 namespace Scanpay\PaymentModule\Model;
 
 use \Magento\Framework\Exception\LocalizedException;
+use Scanpay\PaymentModule\Model\Money;
 
 class OrderUpdater
 {
@@ -10,23 +11,35 @@ class OrderUpdater
     private $order;
     private $orderSender;
     private $trnBuilder;
-
+    
     public function __construct(
         \Psr\Log\LoggerInterface $logger,
         \Magento\Sales\Model\Order $order,
-        \Magento\Sales\Model\Order\Email\Sender\OrderSender $orderSender,
+        \Magento\Sales\Model\OrderNotifier $orderNotifier,
         \Magento\Sales\Model\Order\Payment\Transaction\BuilderInterface $trnBuilder
     ) {
         $this->logger = $logger;
         $this->order = $order;
-        $this->orderSender = $orderSender;
+        $this->orderNotifier = $orderNotifier;
         $this->trnBuilder = $trnBuilder;
     }
 
     public function dataIsValid($data)
     {
-        return isset($data['trnid']) && isset($data['orderid']) &&
-            isset($data['totals']) && isset($data['totals']['authorized']);
+        return isset($data['id']) && isset($data['totals'])
+            && isset($data['totals']['authorized']);
+    }
+
+    public function notifyCustomer($order) {
+        if (!$order->getEmailSent()) {
+            try {
+                $this->orderNotifier->notify($order);
+            } catch (LocalizedException $e) {
+                $this->logger->error('Unable to send order confirmation email for order' .
+                    $order->getIncrementId() . ', Exception message: ' . $e->getMessage());
+            }
+        }
+
     }
 
     public function update($seq, $data)
@@ -41,32 +54,58 @@ class OrderUpdater
             $this->logger->error('Received invalid order data from Scanpay');
             return false;
         }
-        $trnId = $data['trnid'];
+
+        $trnId = $data['id'];
+        /* Ignore transactions without order ids */
+        if (!isset($data['orderid'])) {
+            $this->logger->error('Received transaction #' . $trnId . ' without orderid');
+            return true;
+        }
+
         $order = $this->order->load($data['orderid']);
         /* If order is not in system, ignore it */
         if (!$order->getId()) {
             return true;
         }
 
-        if (!$order->getEmailSent()) {
-            $this->orderSender->send($order);
+        $oldSeq = $order->getScanpaySeq();
+        if (isset($oldSeq) && $oldSeq >= $seq) {
+            $this->notifyCustomer($order);
+            return true;
         }
 
-        $oldSeq = $order->getScanpaySeq();
-        if (isset($oldSeq) && $oldSeq >= $seq) { return; }
+        $state = \Magento\Sales\Model\Order::STATE_PROCESSING;
 
         $payment = $order->getPayment();
+        $auth = $data['totals']['authorized'];
+
+        /* Avoid exceptions if the transaction id somehow already is created */
+        if ($payment->getTransactionId() !== null) {
+            $transaction = $this->trnBuilder->setPayment($payment)->setOrder($order)
+                ->setTransactionId($trnId)->setFailSafe(true)
+                ->build(\Magento\Sales\Model\Order\Payment\Transaction::TYPE_AUTH);
+            $payment->addTransactionCommentsToOrder($transaction, __('The authorized amount is %1.', $auth));
+            $transaction->save();
+        } else {
+            $order->addStatusHistoryComment(__('The authorized amount is %1.', $auth));
+        }
+
+        $payment->setAmountAuthorized((new Money($auth))->number());
+        $payment->setParentTransactionId(null);
+
         $payment->setLastTransId($trnId);
         $payment->setTransactionId($trnId);
 
-        $transaction = $this->trnBuilder->setPayment($payment)->setOrder($order)
-            ->setTransactionId($paymentData['id'])->setFailSafe(true)
-            ->build(\Magento\Sales\Model\Order\Payment\Transaction::TYPE_AUTH);
-        $payment->addTransactionCommentsToOrder($transaction, __('The authorized amount is %1.', $data['totals']['authorized']));
-        $payment->setParentTransactionId(null);
+        $order->setState($state);
+        $order->setStatus($order->getConfig()->getStateDefaultStatus($state));
         $order->setScanpaySeq($seq);
+        // $order->setScanpayShopId(..);
+
         $payment->save();
         $order->save();
+
+        /* Send email AFTER payment has been set */
+        $this->notifyCustomer($order);
         return true;
     }
 

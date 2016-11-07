@@ -122,8 +122,9 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             $this->getResponse()->setContent(json_encode(['error' => 'internal server error']));
             return;
         }
-
-        $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
+        $state = \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT;
+        $order->setState($state);
+        $order->setStatus($order->getConfig()->getStateDefaultStatus($state));
         $order->save();
         $res = json_encode(['url' => $paymenturl], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $this->getResponse()->setContent($res);

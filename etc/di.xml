@@ -3,8 +3,8 @@
     <virtualType name="ScanpayAdapter" type="Magento\Payment\Model\Method\Adapter">
         <arguments>
             <argument name="code" xsi:type="const">\Scanpay\PaymentModule\Model\Config\ConfigProvider::CODE</argument>
-            <argument name="formBlockType" xsi:type="object">Magento\Payment\Block\Form\Cc</argument>
-            <argument name="infoBlockType" xsi:type="object">Magento\Payment\Block\Info\Cc</argument>
+            <argument name="formBlockType" xsi:type="string">Magento\Payment\Block\Form</argument>
+            <argument name="infoBlockType" xsi:type="string">\Scanpay\PaymentModule\Block\PaymentInfo</argument>
             <argument name="valueHandlerPool" xsi:type="object">ScanpayValueHandlerPool</argument>
             <argument name="validatorPool" xsi:type="object">ScanpayValidatorPool</argument>
             <argument name="commandPool" xsi:type="object">ScanpayCommandPool</argument>
