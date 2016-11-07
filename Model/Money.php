@@ -1,6 +1,7 @@
 <?php
 
 namespace Scanpay\PaymentModule\Model;
+use \Magento\Framework\Exception\LocalizedException;
 
 class Money
 {
@@ -188,11 +189,27 @@ class Money
     private $amount;
     private $currency;
 
-    public function __construct($amount, $currency)
+    public function __construct($amount, $currency = false)
     {
+        if (!$currency) {
+            $str = $amount;
+            if (!is_string($str)) {
+                throw new LocalizedException(__('invalid money string'));
+            }
+            $i = strlen($str);
+            while ($i > 0 && !is_numeric($str[$i - 1])) { $i--; }
+            $amount = substr($str, 0, $i);
+            $currency = trim(substr($str, $i));
+            $arr = explode('.', $amount, 2);
+            if (!ctype_digit($arr[0]) || (count($arr) > 0 && !ctype_digit($arr[0]))) {
+                throw new LocalizedException(__('invalid money string'));
+            }
+            $amount = (float)$amount;
+        }
+
         $currency = strtoupper($currency);
         if (!array_key_exists($currency, Money::$currencies)) {
-            throw new \Magento\Framework\Exception\LocalizedException(__('invalid currency ' . $currency));
+            throw new LocalizedException(__('invalid currency ' . $currency));
         }
 
         $curObj = Money::$currencies[$currency];
@@ -214,4 +231,9 @@ class Money
     {
         return (string)$this;
     }
+
+    public function number() {
+        return $this->amount;
+    }
+
 }

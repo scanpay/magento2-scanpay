@@ -28,6 +28,7 @@ class PingHandler extends \Magento\Framework\App\Action\Action
         $this->scopeConfig = $scopeConfig;
         $this->crypt = $crypt;
         $this->sequencer = $sequencer;
+        $this->orderUpdater = $orderUpdater;
         $this->client = $client;
     }
 
@@ -35,7 +36,6 @@ class PingHandler extends \Magento\Framework\App\Action\Action
     {
         $req = $this->getRequest();
         $reqBody = $req->getContent();
-
         $apikey = trim($this->crypt->decrypt($this->scopeConfig->getValue('payment/scanpaypaymentmodule/apikey')));
         if (empty($apikey)) {
             $this->logger->error('Missing API key in scanpay payment method configuration');
@@ -43,7 +43,8 @@ class PingHandler extends \Magento\Framework\App\Action\Action
         }
 
         $localSig = base64_encode(hash_hmac('sha256', $reqBody, $apikey, true));
-        if ($localSig !== $req->getHeader('X-Signature')) { 
+        if ($localSig !== $req->getHeader('X-Signature')) {
+            $this->logger->error('Received request with invalid signature');
             return;
         }
 
@@ -61,7 +62,7 @@ class PingHandler extends \Magento\Framework\App\Action\Action
             $this->logger->error('unable to load scanpay sequence number');
             return;
         }
-    
+
         $localSeq = $localSeqObj['seq'];
 
         while ($localSeq < $remoteSeq) {
@@ -75,7 +76,7 @@ class PingHandler extends \Magento\Framework\App\Action\Action
             }
 
             $localSeq = $resobj['seq'];
-            if (!$orderUpdater->updateAll($remoteSeq, $resobj['changes'])) {
+            if (!$this->orderUpdater->updateAll($remoteSeq, $resobj['changes'])) {
                 $this->logger->error('error updating orders with Scanpay changes');
                 return;
             }
@@ -83,6 +84,7 @@ class PingHandler extends \Magento\Framework\App\Action\Action
             if (!$this->sequencer->save($localSeq)) {
                 return;
             }
+
         }
 
     }
