@@ -66,8 +66,6 @@ class PingHandler extends \Magento\Framework\App\Action\Action
         $localSeq = $localSeqObj['seq'];
 
         while ($localSeq < $remoteSeq) {
-            $this->getResponse()->setContent('doreq');
-            /* Do req */
             try {
                 $resobj = $this->client->getUpdatedTransactions($localSeq);
             } catch (\Magento\Framework\Exception\LocalizedException $e) {
