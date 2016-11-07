@@ -34,6 +34,11 @@ class GlobalSequencer
         $data = [ 'value' => $seq, 'mtime' => time() ];
         $where = [ 'var = ?' => 'seq', 'value < ?' => $seq ];
         $ret = $this->dbConnection->update($this->tableName, $data, $where);
+        if ($ret === 0) {
+            $data = [ 'mtime' => time() ];
+            $where = [ 'var = ?' => 'seq' ];
+            $this->dbConnection->update($this->tableName, $data, $where);
+        }
         return !!$ret;
     }
 
