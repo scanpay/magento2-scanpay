@@ -27,8 +27,8 @@ class GlobalSequencer
 
     public function save($seq)
     {
-        if (!is_int($seq)) {
-            $this->logger->error('Sequence argument is not an int');
+        if (!is_int($seq) || $seq < 0) {
+            $this->logger->error('Sequence argument is not an unsigned int');
             return false;
         }
         $data = [ 'value' => $seq, 'mtime' => time() ];
