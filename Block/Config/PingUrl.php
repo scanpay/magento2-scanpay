@@ -70,7 +70,6 @@ class PingUrl extends \Magento\Config\Block\System\Config\Form\Field
             return;
         }
 
-        $mtime = $localSeqObj['mtime'];
         $status = '';
         if ($t < $mtime + 900) {
             $status = 'ok';
