@@ -65,6 +65,10 @@ class PingHandler extends \Magento\Framework\App\Action\Action
 
         $localSeq = $localSeqObj['seq'];
 
+        if ($localSeq === $remoteSeq) {
+            $this->sequencer->updateMtime();
+        }
+
         while ($localSeq < $remoteSeq) {
             try {
                 $resobj = $this->client->getUpdatedTransactions($localSeq);

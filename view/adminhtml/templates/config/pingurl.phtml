@@ -2,7 +2,7 @@
 .scanpay--pingurl--status > div {
     display: none;
     position: relative;
-    margin-top: 3px;
+    margin-bottom: 6px;
     padding: 10px 10px 10px 26px;
     text-align: left;
     font-size: 13px;
@@ -45,24 +45,37 @@
 </style>
 
 <div class="scanpay--pingurl pp-buttons-container">
-  <input type="text" value="<?php echo $block->getPingUrl() ?>" style="cursor: pointer"
-         onfocus="this.select();" onmouseup="return false;" >
   <div class="scanpay--pingurl--status <?php echo $block->getStatusClass() ?>">
     <div class="scanpay--pingurl--ok">
       <h4>Ok!</h4>
-      <p>Received last ping <?php echo $block->getPingDt() ?></p>
+      <div>
+          Received last ping <?php echo $block->getPingDt() ?>
+      </div>
     </div>
     <div class="scanpay--pingurl--warning">
       <h4>Warning!</h4>
-      <p>Received last ping <?php echo $block->getPingDt() ?>, please check that the URL above matches the URL set in <a href="https://dashboard.scanpay.dk/settings/api">Scanpay dashboard</a>.</p>
+      <div>
+          Received last ping <?php echo $block->getPingDt() ?>, please check that the URL above matches the URL set in
+          <a href="https://dashboard.scanpay.dk/settings/api">Scanpay dashboard</a>
+      </div>
     </div>
     <div class="scanpay--pingurl--error">
       <h4>Error!</h4>
-      <p>Received last ping <?php echo $block->getPingDt() ?>, please check that the URL above matches the URL set in <a href="https://dashboard.scanpay.dk/settings/api">Scanpay dashboard</a></p>
+      <div>
+          Received last ping <?php echo $block->getPingDt() ?>, please check that the URL above matches the URL set in
+          <a href="https://dashboard.scanpay.dk/settings/api">Scanpay dashboard</a>
+          and check your error logs.
+      </div>
     </div>
     <div class="scanpay--pingurl--never--pinged">
       <h4>Awaiting pings!</h4>
-      <p>Never received any pings from Scanpay, please check that the URL above matches the URL set in <a href="https://dashboard.scanpay.dk/settings/api">Scanpay dashboard</a>.</p>
+      <div>
+          Never received any pings from Scanpay, please check that the URL above matches the URL set in
+          <a href="https://dashboard.scanpay.dk/settings/api">Scanpay dashboard</a>
+          and check your error logs.
+      </div>
     </div>
   </div>
+  <input type="text" value="<?php echo $block->getPingUrl() ?>" style="cursor: pointer; background: white; color: #303030; opacity: 1"
+         onfocus="this.select();" onmouseup="return false;" readonly>
 </div>
