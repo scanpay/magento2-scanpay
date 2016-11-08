@@ -24,7 +24,13 @@ class GlobalSequencer
             $this->dbConnection->insert($this->tableName, $data);
         }
     }
-
+    
+    public function updateMtime() {
+        $data = [ 'mtime' => time() ];
+        $where = [ 'var = ?' => 'seq' ];
+        $this->dbConnection->update($this->tableName, $data, $where);
+    }
+    
     public function save($seq)
     {
         if (!is_int($seq) || $seq < 0) {
@@ -35,9 +41,7 @@ class GlobalSequencer
         $where = [ 'var = ?' => 'seq', 'value < ?' => $seq ];
         $ret = $this->dbConnection->update($this->tableName, $data, $where);
         if ($ret === 0) {
-            $data = [ 'mtime' => time() ];
-            $where = [ 'var = ?' => 'seq' ];
-            $this->dbConnection->update($this->tableName, $data, $where);
+            $this->updateMtime();
         }
         return !!$ret;
     }
