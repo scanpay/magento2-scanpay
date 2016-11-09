@@ -8,26 +8,19 @@ class ScanpayClient
 {
     const HOST = 'api.scanpay.dk';
     private $clientFactory;
-    private $crypt;
-    private $scopeConfig;
+    private $apikey;
 
     public function __construct(
         \Magento\Framework\HTTP\ZendClientFactory $clientFactory,
-        \Magento\Framework\Encryption\Encryptor $crypt,
-        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Magento\Framework\Module\ResourceInterface $moduleResource
+        \Magento\Framework\Module\ResourceInterface $moduleResource,
+        $data
     ) {
         $this->clientFactory = $clientFactory;
-        $this->crypt = $crypt;
-        $this->scopeConfig = $scopeConfig;
         $this->moduleResource = $moduleResource;
+        $this->apikey = $data['apikey'];
     }
 
-    public function req($url, $data, $opts = []) {
-        $apikey = trim($this->crypt->decrypt($this->scopeConfig->getValue('payment/scanpaypaymentmodule/apikey')));
-        if (empty($apikey)) {
-            throw new LocalizedException(__('Missing API key in scanpay payment method configuration'));
-        }
+    protected function req($url, $data, $opts = []) {
         $version = $this->moduleResource->getDbVersion('Scanpay_PaymentModule');
 
         $client = $this->clientFactory->create();
@@ -42,7 +35,7 @@ class ScanpayClient
         ];
         $client->setConfig($config);
         $headers = [
-            'Authorization'       => 'Basic ' . base64_encode($apikey),
+            'Authorization'       => 'Basic ' . base64_encode($this->apikey),
             'X-Shop-System'       => 'Magento 2',
             'X-Extension-Version' => $version,
         ];
@@ -95,6 +88,7 @@ class ScanpayClient
         if (filter_var($resobj['url'], FILTER_VALIDATE_URL) === false) {
             throw new LocalizedException(__('invalid url in server response'));
         }
+
         /* Generate the payment URL link from the server and payid */
         return $resobj['url'];
     }
@@ -104,6 +98,7 @@ class ScanpayClient
         if (!isset($resobj['seq']) || !isset($resobj['changes'])) {
             throw new LocalizedException(__('missing json fields in server response'));
         }
+
         return $resobj;
     }
 }

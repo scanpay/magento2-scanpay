@@ -7,6 +7,9 @@ use Scanpay\PaymentModule\Model\Money;
 
 class OrderUpdater
 {
+    const ORDER_DATA_SHOPID = 'scanpay_shopid';
+    const ORDER_DATA_SEQ = 'scanpay_seq';
+
     private $logger;
     private $order;
     private $orderSender;
@@ -42,7 +45,7 @@ class OrderUpdater
 
     }
 
-    public function update($seq, $data)
+    public function update($shopId, $seq, $data)
     {
         /* Ignore errornous transactions */
         if (isset($data['error'])) {
@@ -65,12 +68,31 @@ class OrderUpdater
         $order = $this->order->load($data['orderid']);
         /* If order is not in system, ignore it */
         if (!$order->getId()) {
+            $this->logger->error('Order #' . $data['orderid'] . ' not in system');
             return true;
         }
 
-        $oldSeq = $order->getScanpaySeq();
-        if (isset($oldSeq) && $oldSeq >= $seq) {
-            $this->notifyCustomer($order);
+        $orderShopId = (int)$order->getData(self::ORDER_DATA_SHOPID);
+        $oldSeq = (int)$order->getData(self::ORDER_DATA_SEQ);
+        /*
+        $extAttr = $this->order->getExtensionAttributes();
+        if ($extAttr === null) {
+            $this->logger->error('Missing Scanpay extension attributes');
+            return true;
+        }
+
+        $orderShopId = $extAttr->getScanpayShopid();
+        */
+        if ($shopId !== $orderShopId) {
+            $this->logger->error('type' . gettype($shopId) . ' ' . gettype($orderShopId));
+            $this->logger->error('Order #' . $data['orderid'] . ' shopid (' .
+                $orderShopId . ') does not match current shopid (' .
+                $shopId . '()');
+            return true;
+        }
+        /*
+        $oldSeq = $extAttr->getScanpaySeq();*/
+        if ($oldSeq >= $seq) {
             return true;
         }
 
@@ -98,8 +120,7 @@ class OrderUpdater
 
         $order->setState($state);
         $order->setStatus($order->getConfig()->getStateDefaultStatus($state));
-        $order->setScanpaySeq($seq);
-        // $order->setScanpayShopId(..);
+        $order->setData(self::ORDER_DATA_SEQ, $seq);
 
         $payment->save();
         $order->save();
@@ -109,10 +130,10 @@ class OrderUpdater
         return true;
     }
 
-    public function updateAll($seq, $dataArr)
+    public function updateAll($shopId, $seq, $dataArr)
     {
         foreach ($dataArr as $data) {
-            if (!$this->update($seq, $data)) {
+            if (!$this->update($shopId, $seq, $data)) {
                 return false;
             }
         }
