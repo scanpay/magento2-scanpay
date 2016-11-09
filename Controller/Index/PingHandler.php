@@ -12,7 +12,7 @@ class PingHandler extends \Magento\Framework\App\Action\Action
     private $crypt;
     private $sequencer;
     private $orderUpdater;
-    private $client;
+    private $clientFactory;
 
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
@@ -21,7 +21,7 @@ class PingHandler extends \Magento\Framework\App\Action\Action
         \Magento\Framework\Encryption\Encryptor $crypt,
         \Scanpay\PaymentModule\Model\GlobalSequencer $sequencer,
         \Scanpay\PaymentModule\Model\OrderUpdater $orderUpdater,
-        \Scanpay\PaymentModule\Model\ScanpayClient $client
+        \Scanpay\PaymentModule\Model\ScanpayClientFactory $clientFactory
     ) {
         parent::__construct($context);
         $this->logger = $logger;
@@ -29,7 +29,7 @@ class PingHandler extends \Magento\Framework\App\Action\Action
         $this->crypt = $crypt;
         $this->sequencer = $sequencer;
         $this->orderUpdater = $orderUpdater;
-        $this->client = $client;
+        $this->clientFactory = $clientFactory;
     }
 
     public function execute()
@@ -41,6 +41,14 @@ class PingHandler extends \Magento\Framework\App\Action\Action
             $this->logger->error('Missing API key in scanpay payment method configuration');
             return;
         }
+
+        $shopId = explode(':', $apikey)[0];
+        if (!ctype_digit($shopId)) {
+            $this->logger->error('Invalid Scanpay API-key format');
+            return;
+        }
+
+        $shopId = (int)$shopId;
 
         $localSig = base64_encode(hash_hmac('sha256', $reqBody, $apikey, true));
         if ($localSig !== $req->getHeader('X-Signature')) {
@@ -57,33 +65,39 @@ class PingHandler extends \Magento\Framework\App\Action\Action
         $remoteSeq = $jsonreq['seq'];
         if (!isset($remoteSeq) || !is_int($remoteSeq)) { return; }
 
-        $localSeqObj = $this->sequencer->load();
+        $localSeqObj = $this->sequencer->load($shopId);
         if (!$localSeqObj) {
-            $this->logger->error('unable to load scanpay sequence number');
-            return;
+            $this->sequencer->insert($shopId);
+            $localSeqObj = $this->sequencer->load($shopId);
+            if (!$localSeqObj) {
+                $this->logger->error('unable to load scanpay sequence number');
+                return;
+            }
         }
 
         $localSeq = $localSeqObj['seq'];
 
         if ($localSeq === $remoteSeq) {
-            $this->sequencer->updateMtime();
+            $this->sequencer->updateMtime($shopId);
         }
+
+        $client = $this->clientFactory->create([ 'apikey' => $apikey]);
 
         while ($localSeq < $remoteSeq) {
             try {
-                $resobj = $this->client->getUpdatedTransactions($localSeq);
+                $resobj = $client->getUpdatedTransactions($localSeq);
             } catch (\Magento\Framework\Exception\LocalizedException $e) {
                 $this->logger->error('scanpay client exception: ' . $e->getMessage());
                 return;
             }
 
             $localSeq = $resobj['seq'];
-            if (!$this->orderUpdater->updateAll($remoteSeq, $resobj['changes'])) {
+            if (!$this->orderUpdater->updateAll($shopId, $remoteSeq, $resobj['changes'])) {
                 $this->logger->error('error updating orders with Scanpay changes');
                 return;
             }
 
-            if (!$this->sequencer->save($localSeq)) {
+            if (!$this->sequencer->save($shopId, $localSeq)) {
                 return;
             }
 

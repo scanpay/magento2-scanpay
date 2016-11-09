@@ -6,7 +6,9 @@ use Magento\Framework\Setup\UpgradeSchemaInterface;
 use Magento\Framework\Setup\ModuleContextInterface;
 use Magento\Framework\Setup\SchemaSetupInterface;
 use Magento\Framework\DB\Ddl\Table;
- 
+
+use Scanpay\PaymentModule\Model\OrderUpdater;
+
 class UpgradeSchema implements UpgradeSchemaInterface
 {
     public function upgrade(SchemaSetupInterface $setup, ModuleContextInterface $context)
@@ -14,32 +16,32 @@ class UpgradeSchema implements UpgradeSchemaInterface
         $setup->startSetup();
  
         // Get tutorial_simplenews table
-        $tableName = $setup->getTable('scanpay_variables');
+        $tableName = $setup->getTable('scanpay_seq');
         // Check if the table already exists
         if ($setup->getConnection()->isTableExists($tableName) != true) {
             // Create tutorial_simplenews table
             $table = $setup->getConnection()
                 ->newTable($tableName)
                 ->addColumn(
-                    'var',
-                    Table::TYPE_TEXT,
-                    255,
+                    'shopid',
+                    Table::TYPE_BIGINT,
+                    null,
                     [
                         'auto_increment' => false,
                         'nullable'       => false,
-                        'primary'        => true
+                        'primary'        => true,
                     ],
-                    'Variable'
+                    'Shop Id'
                 )
                 ->addColumn(
-                    'value',
-                    Table::TYPE_TEXT,
+                    'seq',
+                    Table::TYPE_BIGINT,
                     null,
                     [
                         'nullable' => false,
-                        'default' => ''
+                        'default' => 0,
                     ],
-                    'Value'
+                    'Scanpay Events Sequence Number'
                 )
                 ->addColumn(
                     'mtime',
@@ -47,16 +49,38 @@ class UpgradeSchema implements UpgradeSchemaInterface
                     null,
                     [
                         'nullable' => false,
-                        'default' => 0
+                        'default' => 0,
                     ],
                     'Modification Time'
                 )
-                ->setComment('Scanpay Variables Key-Value Store')
+                ->setComment('Scanpay Events Sequence Store')
                 ->setOption('type', 'InnoDB')
                 ->setOption('charset', 'utf8');
             $setup->getConnection()->createTable($table);
         }
- 
+
+        $setup->getConnection()->addColumn(
+            $setup->getTable('sales_order'),
+            OrderUpdater::ORDER_DATA_SHOPID,
+            [
+                'type' => Table::TYPE_BIGINT,
+                'nullable' => false,
+                'default' => 0,
+                'comment' => 'Shop ID'
+            ]
+        );
+
+        $setup->getConnection()->addColumn(
+            $setup->getTable('sales_order'),
+            OrderUpdater::ORDER_DATA_SEQ,
+            [
+                'type' => Table::TYPE_BIGINT,
+                'nullable' => false,
+                'default' => 0,
+                'comment' => 'Scanpay Events Sequence Number'
+            ]
+        );
+
         $setup->endSetup();
     }
 }
