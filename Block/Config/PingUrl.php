@@ -4,14 +4,18 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 class PingUrl extends \Magento\Config\Block\System\Config\Form\Field
 {
     const PINGURL_TEMPLATE = 'config/pingurl.phtml';
-
+    private $scopeConfig;
+    private $crypt;
     private $sequencer;
+
     public function __construct(
         \Magento\Backend\Block\Template\Context $context,
+        \Magento\Framework\Encryption\Encryptor $crypt,
         \Scanpay\PaymentModule\Model\GlobalSequencer $sequencer,
         array $data = []
     ) {
         parent::__construct($context,$data);
+        $this->crypt = $crypt;
         $this->sequencer = $sequencer;
     }
 
@@ -58,16 +62,36 @@ class PingUrl extends \Magento\Config\Block\System\Config\Form\Field
     protected function _getElementHtml(\Magento\Framework\Data\Form\Element\AbstractElement $element)
     {
         $t = time();
+
+        $this->setData([
+            'html_id' => $element->getHtmlId(),
+            'ping_url' => $this->_urlBuilder->getBaseUrl(['_secure' => true]) . 'scanpay/index/pingHandler',
+            'status_class' => 'scanpay--pingurl--never--pinged',
+            'ping_dt' => $this->fmtDeltaTime($t),
+        ]);
+
+        $apikey = trim($this->crypt->decrypt($this->_scopeConfig->getValue('payment/scanpaypaymentmodule/apikey')));
+        if (empty($apikey)) {
+            $this->_logger->error('Missing API key in scanpay payment method configuration');
+            return $this->_toHtml();
+        }
+
+        $shopId = explode(':', $apikey)[0];
+        if (!ctype_digit($shopId)) {
+            $this->_logger->error('Invalid Scanpay API-key format');
+            return $this->_toHtml();
+        }
+
         $originalData = $element->getOriginalData();
-        $localSeqObj = $this->sequencer->load();
+        $localSeqObj = $this->sequencer->load($shopId);
         if (!$localSeqObj) {
-            $this->logger->error('unable to load scanpay sequence number');
-            return;
+            $this->_logger->error('unable to load scanpay sequence number');
+            return $this->_toHtml();
         }
         $mtime = $localSeqObj['mtime'];
         if ($mtime > $t) {
-            $this->logger->error('last modified time is in the future');
-            return;
+            $this->_logger->error('last modified time is in the future');
+            return $this->_toHtml();
         }
 
         $status = '';
@@ -83,8 +107,6 @@ class PingUrl extends \Magento\Config\Block\System\Config\Form\Field
 
         $className = 'scanpay--pingurl--' . $status;
         $this->addData([
-            'html_id' => $element->getHtmlId(),
-            'ping_url' => $this->_urlBuilder->getBaseUrl(['_secure' => true]) . 'scanpay/index/pingHandler',
             'status_class' => $className,
             'ping_dt' => $this->fmtDeltaTime($t - $mtime),
         ]);
