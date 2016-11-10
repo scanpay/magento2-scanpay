@@ -6,73 +6,99 @@ use \Magento\Framework\Exception\LocalizedException;
 
 class ScanpayClient
 {
+    const HOST = 'api.scanpay.dk';
+    private $clientFactory;
     private $apikey;
-    private $host;
-    public function __construct($arg)
-    {
-        $this->apikey = $arg['apikey'];
-        $this->host = $arg['host'];
+
+    public function __construct(
+        \Magento\Framework\HTTP\ZendClientFactory $clientFactory,
+        \Magento\Framework\Module\ResourceInterface $moduleResource,
+        $data
+    ) {
+        $this->clientFactory = $clientFactory;
+        $this->moduleResource = $moduleResource;
+        $this->apikey = $data['apikey'];
     }
 
-    public function getPaymentURL($data, $opts = [])
-    {
-        $data = json_encode($data, JSON_UNESCAPED_UNICODE);
+    protected function req($url, $data, $opts = []) {
+        $version = $this->moduleResource->getDbVersion('Scanpay_PaymentModule');
 
-        /* Create a curl request towards the api endpoint */
-        $ch = curl_init('https://' . $this->{'host'} . '/v1/new');
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-        curl_setopt($ch, CURLOPT_USERPWD, $this->{'apikey'});
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        if (isset($opts['cardholderIP'])) {
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-Cardholder-Ip: ' . $opts['cardholderIP']]);
+        $client = $this->clientFactory->create();
+        $config = [
+           'adapter'      => 'Zend\Http\Client\Adapter\Curl',
+           'curloptions'  => [
+                CURLOPT_RETURNTRANSFER => true,
+            ],
+           'maxredirects' => 0,
+           'keepalive'    => true,
+           'timeout'      => 30,
+        ];
+        $client->setConfig($config);
+        $headers = [
+            'Authorization'       => 'Basic ' . base64_encode($this->apikey),
+            'X-Shop-System'       => 'Magento 2',
+            'X-Extension-Version' => $version,
+        ];
+        if (!isset($opts['cardholderIP'])) {
+            $headers = array_merge($headers, [ 'X-Cardholder-Ip: ' . $opts['cardholderIP'] ]);
         }
 
-        $result = curl_exec($ch);
-        if ($result === false) {
-            $errstr = 'unknown error';
-            if ($errno = curl_errno($ch)) {
-                $errstr = curl_strerror($errno);
-            }
-
-            curl_close($ch);
-            throw new LocalizedException(__('curl_exec - ' . $errstr));
+        $client->setHeaders($headers);
+        error_log('https://' . SELF::HOST . $url);
+        $client->setUri('https://' . SELF::HOST . $url);
+        if (is_null($data)) {
+            $client->setMethod(\Zend\Http\Request::METHOD_GET);
+        } else {
+            $client->setMethod(\Zend\Http\Request::METHOD_POST);
+            $client->setRawData(json_encode($data, JSON_UNESCAPED_UNICODE));
+            $client->setEncType('application/json');
         }
 
-        /* Retrieve the http status code */
-        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        if ($httpcode !== 200) {
-            if ($httpcode === 403) {
+        $res = $client->request();
+        $code = $res->getStatus();
+        if ($code !== 200) {
+            if ($code === 403) {
                 throw new LocalizedException(__('Invalid API-key'));
             }
-
-            throw new LocalizedException(__('Unexpected http response code: ' . $httpcode));
+            throw new LocalizedException(__('Unexpected http code: ' . $code . ' from ' . $url));
         }
 
         /* Attempt to decode the json response */
-        $jsonres = @json_decode($result);
-        if ($jsonres === null) {
+        $resobj = @json_decode($res->getBody(), true);
+        if ($resobj === null) {
             throw new LocalizedException(__('unable to json-decode response'));
         }
 
         /* Check if error field is present */
-        if (isset($jsonres->{'error'})) {
-            throw new LocalizedException(__('server returned error: ' . $jsonres->{'error'}));
+        if (isset($resobj['error'])) {
+            throw new LocalizedException(__('server returned error: ' . $resobj['error']));
         }
 
+        return $resobj;
+    }
+
+    public function getPaymentURL($data, $opts = [])
+    {
+        $resobj = $this->req('/v1/new', $data, $opts);
         /* Check the existence of the server and the payid field */
-        if (!isset($jsonres->{'url'})) {
+        if (!isset($resobj['url'])) {
             throw new LocalizedException(__('missing json fields in server response'));
         }
 
-        if (filter_var($jsonres->{'url'}, FILTER_VALIDATE_URL) === false) {
+        if (filter_var($resobj['url'], FILTER_VALIDATE_URL) === false) {
             throw new LocalizedException(__('invalid url in server response'));
         }
 
         /* Generate the payment URL link from the server and payid */
-        return $jsonres->{'url'};
+        return $resobj['url'];
+    }
+
+    public function getUpdatedTransactions($seq) {
+        $resobj = $this->req('/v1/seq/' . $seq, null, null);
+        if (!isset($resobj['seq']) || !isset($resobj['changes'])) {
+            throw new LocalizedException(__('missing json fields in server response'));
+        }
+
+        return $resobj;
     }
 }

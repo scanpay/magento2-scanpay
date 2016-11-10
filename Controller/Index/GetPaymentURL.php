@@ -2,8 +2,8 @@
 
 namespace Scanpay\PaymentModule\Controller\Index;
 
-use Scanpay\PaymentModule\Model\ScanpayClient;
 use Scanpay\PaymentModule\Model\Money;
+use Scanpay\PaymentModule\Model\OrderUpdater;
 
 class GetPaymentURL extends \Magento\Framework\App\Action\Action
 {
@@ -13,6 +13,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
     private $crypt;
     private $urlHelper;
     private $remoteAddress;
+    private $clientFactory;
 
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
@@ -21,7 +22,8 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Framework\Encryption\Encryptor $crypt,
         \Magento\Framework\Url $urlHelper,
-        \Magento\Framework\HTTP\PhpEnvironment\RemoteAddress $remoteAddress
+        \Magento\Framework\HTTP\PhpEnvironment\RemoteAddress $remoteAddress,
+        \Scanpay\PaymentModule\Model\ScanpayClientFactory $clientFactory
     ) {
         parent::__construct($context);
         $this->logger = $logger;
@@ -30,10 +32,25 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         $this->crypt = $crypt;
         $this->urlHelper = $urlHelper;
         $this->remoteAddress = $remoteAddress;
+        $this->clientFactory = $clientFactory;
     }
 
     public function execute()
     {
+        $apikey = trim($this->crypt->decrypt($this->scopeConfig->getValue('payment/scanpaypaymentmodule/apikey')));
+        if (empty($apikey)) {
+            $this->getResponse()->setContent(json_encode(['error' => 'missing api-key']));
+            return;
+        }
+
+        $shopId = explode(':', $apikey)[0];
+        if (!ctype_digit($shopId)) {
+            $this->getResponse()->setContent(json_encode(['error' => 'invalid api-key']));
+            return;
+        }
+
+        $shopId = (int)$shopId;
+
         $order = $this->order->load($this->getRequest()->getParam('orderid'));
         if (!$order->getId()) {
             $this->getResponse()->setContent(json_encode(['error' => 'order not found']));
@@ -114,15 +131,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             ];
         }
 
-        $apikey = trim($this->crypt->decrypt($this->scopeConfig->getValue('payment/scanpaypaymentmodule/apikey')));
-        if (empty($apikey)) {
-            $this->logger->error('Missing API key in scanpay payment method configuration');
-            $this->getResponse()->setContent(json_encode(['error' => 'internal server error']));
-            return;
-        }
-
-        $client = new ScanpayClient([ 'host' => 'api.scanpay.dk', 'apikey' => $apikey ]);
-        $paymenturl = '';
+        $client = $this->clientFactory->create([ 'apikey' => $apikey ]);
         try {
             $opts = ['cardholderIP' => $this->remoteAddress->getRemoteAddress()];
             $paymenturl = $client->getPaymentURL(array_filter($data), $opts);
@@ -132,8 +141,12 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             return;
         }
 
-        $order->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
+        $state = \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT;
+        $order->setState($state);
+        $order->setStatus($order->getConfig()->getStateDefaultStatus($state));        
+        $order->setData(OrderUpdater::ORDER_DATA_SHOPID, $shopId);
         $order->save();
+
         $res = json_encode(['url' => $paymenturl], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $this->getResponse()->setContent($res);
     }
