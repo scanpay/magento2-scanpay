@@ -3,12 +3,14 @@
 namespace Scanpay\PaymentModule\Model;
 
 use \Magento\Framework\Exception\LocalizedException;
+use \Magento\Sales\Model\Order\Payment\Transaction;
 use Scanpay\PaymentModule\Model\Money;
 
 class OrderUpdater
 {
     const ORDER_DATA_SHOPID = 'scanpay_shopid';
     const ORDER_DATA_SEQ = 'scanpay_seq';
+    const ORDER_DATA_NACTS = 'scanpay_nacts';
 
     private $logger;
     private $order;
@@ -80,12 +82,12 @@ class OrderUpdater
         $oldSeq = (int)$order->getData(self::ORDER_DATA_SEQ);
 
         if ($shopId !== $orderShopId) {
-            $this->logger->error('type' . gettype($shopId) . ' ' . gettype($orderShopId));
             $this->logger->error('Order #' . $data['orderid'] . ' shopid (' .
                 $orderShopId . ') does not match current shopid (' .
                 $shopId . '()');
             return true;
         }
+
         if ($oldSeq >= $seq) {
             return true;
         }
@@ -93,26 +95,57 @@ class OrderUpdater
         $payment = $order->getPayment();
         $auth = $data['totals']['authorized'];
 
-        /* Avoid exceptions if the transaction id somehow already is created */
-        if ($payment->getTransactionId() !== null) {
-            $transaction = $this->trnBuilder->setPayment($payment)->setOrder($order)
-                ->setTransactionId($trnId)->setFailSafe(true)
-                ->build(\Magento\Sales\Model\Order\Payment\Transaction::TYPE_AUTH);
-            $payment->addTransactionCommentsToOrder($transaction, __('The authorized amount is %1.', $auth));
+        /* Check if the transaciton is already registered */
+        if ($payment->getTransactionId() === null) {            
+            $payment->setParentTransactionId(null);
+            $payment->setLastTransId($trnId);
+            $payment->setTransactionId($trnId);
+            $payment->setAmountAuthorized((new Money($auth))->number());
+            $transaction = $payment->addTransaction(Transaction::TYPE_AUTH, null, true);
             $transaction->save();
-        } else {
-            $order->addStatusHistoryComment(__('The authorized amount is %1.', $auth));
+
+            $payment->addTransactionCommentsToOrder($transaction, __('The authorized amount is %1.', $auth));
+
+            $state = \Magento\Sales\Model\Order::STATE_PROCESSING;
+            $order->setState($state);
+            $order->setStatus($order->getConfig()->getStateDefaultStatus($state));
         }
 
-        $payment->setAmountAuthorized((new Money($auth))->number());
-        $payment->setParentTransactionId(null);
+        if (isset($data['acts']) && is_array($data['acts'])) {
+            $nacts = (int)$order->getData(self::ORDER_DATA_NACTS);
+            for ($i = $nacts; $i < count($data['acts']); $i++) {
+                $act = $data['acts'][$i];
+                switch ($act['act']) {
+                case 'capture':
+                    $transaction = $payment->addTransaction(Transaction::TYPE_CAPTURE, null, true);
+                    $transaction->save();
+                    if (isset($act['total']) && is_string($act['total'])) {
+                        $payment->addTransactionCommentsToOrder($transaction, __('The captured amount is %1.', $act['total']));
+                    }
+                    break;
 
-        $payment->setLastTransId($trnId);
-        $payment->setTransactionId($trnId);
+                case 'refund':
+                    $transaction = $payment->addTransaction(Transaction::TYPE_REFUND, null, true);
+                    $transaction->save();
+                    if (isset($act['total']) && is_string($act['total'])) {
+                        $payment->addTransactionCommentsToOrder($transaction, __('The refunded amount is %1.', $act['total']));
+                    }
+                    break;
+                }
+            }
 
-        $state = \Magento\Sales\Model\Order::STATE_PROCESSING;
-        $order->setState($state);
-        $order->setStatus($order->getConfig()->getStateDefaultStatus($state));
+            $order->setData(self::ORDER_DATA_NACTS, count($data['acts']));
+
+            if (isset($data['totals']['captured']) && Money::validate($data['totals']['captured'])) {
+                $payment->setAmountPaid((new Money($data['totals']['captured']))->number());
+            }
+
+            if (isset($data['totals']['refunded']) && Money::validate($data['totals']['refunded'])) {
+                $payment->setAmountRefunded((new Money($data['totals']['refunded']))->number());
+            }
+
+        }
+
         $order->setData(self::ORDER_DATA_SEQ, $data['seq']);
 
         $payment->save();

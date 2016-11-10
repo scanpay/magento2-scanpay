@@ -27,6 +27,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
                     Table::TYPE_BIGINT,
                     null,
                     [
+                        'unsigned'       => true,
                         'auto_increment' => false,
                         'nullable'       => false,
                         'primary'        => true,
@@ -38,8 +39,9 @@ class UpgradeSchema implements UpgradeSchemaInterface
                     Table::TYPE_BIGINT,
                     null,
                     [
+                        'unsigned' => true,
                         'nullable' => false,
-                        'default' => 0,
+                        'default'  => 0,
                     ],
                     'Scanpay Events Sequence Number'
                 )
@@ -63,10 +65,11 @@ class UpgradeSchema implements UpgradeSchemaInterface
             $setup->getTable('sales_order'),
             OrderUpdater::ORDER_DATA_SHOPID,
             [
-                'type' => Table::TYPE_BIGINT,
+                'type'     => Table::TYPE_BIGINT,
+                'unsigned' => true,
                 'nullable' => false,
-                'default' => 0,
-                'comment' => 'Shop ID'
+                'default'  => 0,
+                'comment'  => 'Shop ID'
             ]
         );
 
@@ -74,10 +77,23 @@ class UpgradeSchema implements UpgradeSchemaInterface
             $setup->getTable('sales_order'),
             OrderUpdater::ORDER_DATA_SEQ,
             [
-                'type' => Table::TYPE_BIGINT,
+                'type'     => Table::TYPE_BIGINT,
+                'unsigned' => true,
                 'nullable' => false,
-                'default' => 0,
-                'comment' => 'Scanpay Events Sequence Number'
+                'default'  => 0,
+                'comment'  => 'Scanpay Events Sequence Number'
+            ]
+        );
+
+        $setup->getConnection()->addColumn(
+            $setup->getTable('sales_order'),
+            OrderUpdater::ORDER_DATA_NACTS,
+            [
+                'type'     => Table::TYPE_BIGINT,
+                'unsigned' => true,
+                'nullable' => false,
+                'default'  => 0,
+                'comment'  => 'Scanpay Number of Acts'
             ]
         );
 
