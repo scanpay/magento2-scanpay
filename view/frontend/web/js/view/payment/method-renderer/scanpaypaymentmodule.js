@@ -33,19 +33,6 @@ define(
                     'method': this.item.method
                 };
             },
-            /*
-            selectPaymentMethod: function() {
-                selectPaymentMethodAction(this.getData());
-                checkoutData.setSelectedPaymentMethod(this.item.method);
-                return true;
-            },
-            afterPlaceOrder: function () {
-                //window.location.replace(url.build('mymodule/standard/redirect/'));
-            },
-            // Returns send check to info
-            getMailingAddress: function() {
-                return window.checkoutConfig.payment.checkmo.mailingAddress;
-            },*/
             placeOrder: function (data, event) {
                 if (!this.validate()) {
                     alert('invalid');

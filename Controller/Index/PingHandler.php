@@ -81,7 +81,7 @@ class PingHandler extends \Magento\Framework\App\Action\Action
             $this->sequencer->updateMtime($shopId);
         }
 
-        $client = $this->clientFactory->create([ 'apikey' => $apikey]);
+        $client = $this->clientFactory->create(['apikey' => $apikey]);
 
         while ($localSeq < $remoteSeq) {
             try {
@@ -100,8 +100,6 @@ class PingHandler extends \Magento\Framework\App\Action\Action
             if (!$this->sequencer->save($shopId, $localSeq)) {
                 return;
             }
-
         }
-
     }
 }

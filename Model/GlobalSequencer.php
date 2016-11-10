@@ -49,7 +49,7 @@ class GlobalSequencer
             return false;
         }
 
-        $data = [ 'shopid' => $shopId, 'seq' => $seq, 'mtime' => time() ];
+        $data = [ 'seq' => $seq, 'mtime' => time() ];
         $where = [ 'shopid = ?' => $shopId, 'seq < ?' => $seq ];
         $ret = $this->dbConnection->update($this->tableName, $data, $where);
         if ($ret === 0) {
