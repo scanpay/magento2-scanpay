@@ -37,6 +37,17 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
 
     public function execute()
     {
+        $order = $this->order->load($this->getRequest()->getParam('orderid'));
+        if (!$order->getId()) {
+            $this->getResponse()->setContent(json_encode(['error' => 'order not found']));
+            return;
+        }
+
+        $state = \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT;
+        $order->setState($state);
+        $order->setStatus($order->getConfig()->getStateDefaultStatus($state));        
+        $order->save();
+
         $apikey = trim($this->crypt->decrypt($this->scopeConfig->getValue('payment/scanpaypaymentmodule/apikey')));
         if (empty($apikey)) {
             $this->getResponse()->setContent(json_encode(['error' => 'missing api-key']));
@@ -50,12 +61,6 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         }
 
         $shopId = (int)$shopId;
-
-        $order = $this->order->load($this->getRequest()->getParam('orderid'));
-        if (!$order->getId()) {
-            $this->getResponse()->setContent(json_encode(['error' => 'order not found']));
-            return;
-        }
 
         $orderid = $order->getIncrementId();
         $baseUrl = $this->urlHelper->getBaseUrl();
@@ -141,9 +146,6 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             return;
         }
 
-        $state = \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT;
-        $order->setState($state);
-        $order->setStatus($order->getConfig()->getStateDefaultStatus($state));        
         $order->setData(OrderUpdater::ORDER_DATA_SHOPID, $shopId);
         $order->save();
 
