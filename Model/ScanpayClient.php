@@ -20,7 +20,8 @@ class ScanpayClient
         $this->apikey = $data['apikey'];
     }
 
-    protected function req($url, $data, $opts = []) {
+    protected function req($url, $data, $opts = [])
+    {
         $version = $this->moduleResource->getDbVersion('Scanpay_PaymentModule');
 
         $client = $this->clientFactory->create();
@@ -44,13 +45,12 @@ class ScanpayClient
         }
 
         $client->setHeaders($headers);
-        error_log('https://' . SELF::HOST . $url);
         $client->setUri('https://' . SELF::HOST . $url);
         if (is_null($data)) {
             $client->setMethod(\Zend\Http\Request::METHOD_GET);
         } else {
             $client->setMethod(\Zend\Http\Request::METHOD_POST);
-            $client->setRawData(json_encode($data, JSON_UNESCAPED_UNICODE));
+            $client->setRawData(json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
             $client->setEncType('application/json');
         }
 
@@ -60,7 +60,7 @@ class ScanpayClient
             if ($code === 403) {
                 throw new LocalizedException(__('Invalid API-key'));
             }
-            throw new LocalizedException(__('Unexpected http code: ' . $code . ' from ' . $url));
+            throw new LocalizedException(__('Unexpected http code: %1 from %2', $code, $url));
         }
 
         /* Attempt to decode the json response */
@@ -71,7 +71,7 @@ class ScanpayClient
 
         /* Check if error field is present */
         if (isset($resobj['error'])) {
-            throw new LocalizedException(__('server returned error: ' . $resobj['error']));
+            throw new LocalizedException(__('server returned error: %1', $resobj['error']));
         }
 
         return $resobj;
@@ -93,7 +93,8 @@ class ScanpayClient
         return $resobj['url'];
     }
 
-    public function getUpdatedTransactions($seq) {
+    public function getUpdatedTransactions($seq)
+    {
         $resobj = $this->req('/v1/seq/' . $seq, null, null);
         if (!isset($resobj['seq']) || !isset($resobj['changes'])) {
             throw new LocalizedException(__('missing json fields in server response'));

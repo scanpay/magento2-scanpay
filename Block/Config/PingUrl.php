@@ -113,4 +113,3 @@ class PingUrl extends \Magento\Config\Block\System\Config\Form\Field
         return $this->_toHtml();
     }
 }
- 

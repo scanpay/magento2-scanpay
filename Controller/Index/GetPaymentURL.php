@@ -71,7 +71,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             $data['billing'] = array_filter([
                 'name'    => $billaddr->getName(),
                 'email'   => $billaddr->getEmail(),
-                'phone'   => preg_replace('/\s+/', '', $billaddr->getTelephone()),
+                'phone'   => preg_replace('/\s+/', ' ', $billaddr->getTelephone()),
                 'address' => $billaddr->getStreet(),
                 'city'    => $billaddr->getCity(),
                 'zip'     => $billaddr->getPostcode(),
@@ -87,7 +87,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             $data['shipping'] = array_filter([
                 'name'    => $shipaddr->getName(),
                 'email'   => $shipaddr->getEmail(),
-                'phone'   => preg_replace('/\s+/', '', $shipaddr->getTelephone()),
+                'phone'   => preg_replace('/\s+/', ' ', $shipaddr->getTelephone()),
                 'address' => $shipaddr->getStreet(),
                 'city'    => $shipaddr->getCity(),
                 'zip'     => $shipaddr->getPostcode(),
@@ -131,7 +131,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             ];
         }
 
-        $client = $this->clientFactory->create([ 'apikey' => $apikey ]);
+        $client = $this->clientFactory->create(['apikey' => $apikey]);
         try {
             $opts = ['cardholderIP' => $this->remoteAddress->getRemoteAddress()];
             $paymenturl = $client->getPaymentURL(array_filter($data), $opts);

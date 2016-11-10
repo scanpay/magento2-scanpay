@@ -33,7 +33,8 @@ class OrderUpdater
             && isset($data['totals']['authorized']);
     }
 
-    public function notifyCustomer($order) {
+    public function notifyCustomer($order)
+    {
         if (!$order->getEmailSent()) {
             try {
                 $this->orderNotifier->notify($order);
@@ -60,7 +61,7 @@ class OrderUpdater
 
         $trnId = $data['id'];
         /* Ignore transactions without order ids */
-        if (!isset($data['orderid'])) {
+        if (!isset($data['orderid']) || $data['orderid'] === "") {
             $this->logger->error('Received transaction #' . $trnId . ' without orderid');
             return true;
         }
@@ -74,15 +75,7 @@ class OrderUpdater
 
         $orderShopId = (int)$order->getData(self::ORDER_DATA_SHOPID);
         $oldSeq = (int)$order->getData(self::ORDER_DATA_SEQ);
-        /*
-        $extAttr = $this->order->getExtensionAttributes();
-        if ($extAttr === null) {
-            $this->logger->error('Missing Scanpay extension attributes');
-            return true;
-        }
 
-        $orderShopId = $extAttr->getScanpayShopid();
-        */
         if ($shopId !== $orderShopId) {
             $this->logger->error('type' . gettype($shopId) . ' ' . gettype($orderShopId));
             $this->logger->error('Order #' . $data['orderid'] . ' shopid (' .
@@ -90,13 +83,9 @@ class OrderUpdater
                 $shopId . '()');
             return true;
         }
-        /*
-        $oldSeq = $extAttr->getScanpaySeq();*/
         if ($oldSeq >= $seq) {
             return true;
         }
-
-        $state = \Magento\Sales\Model\Order::STATE_PROCESSING;
 
         $payment = $order->getPayment();
         $auth = $data['totals']['authorized'];
@@ -118,6 +107,7 @@ class OrderUpdater
         $payment->setLastTransId($trnId);
         $payment->setTransactionId($trnId);
 
+        $state = \Magento\Sales\Model\Order::STATE_PROCESSING;
         $order->setState($state);
         $order->setStatus($order->getConfig()->getStateDefaultStatus($state));
         $order->setData(self::ORDER_DATA_SEQ, $seq);
