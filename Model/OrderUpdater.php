@@ -29,8 +29,11 @@ class OrderUpdater
 
     public function dataIsValid($data)
     {
-        return isset($data['id']) && isset($data['totals'])
-            && isset($data['totals']['authorized']);
+        return isset($data['id']) && is_int($data['id']) &&
+            isset($data['totals']) && is_array($data['totals']) &&
+            isset($data['totals']['authorized']) &&
+            Money::validate($data['totals']['authorized']) &&
+            isset($data['seq']) && is_int($data['seq']);
     }
 
     public function notifyCustomer($order)
@@ -110,7 +113,7 @@ class OrderUpdater
         $state = \Magento\Sales\Model\Order::STATE_PROCESSING;
         $order->setState($state);
         $order->setStatus($order->getConfig()->getStateDefaultStatus($state));
-        $order->setData(self::ORDER_DATA_SEQ, $seq);
+        $order->setData(self::ORDER_DATA_SEQ, $data['seq']);
 
         $payment->save();
         $order->save();

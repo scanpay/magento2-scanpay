@@ -188,6 +188,16 @@ class Money
 
     private $amount;
     private $currency;
+    
+    public static function validate($amount, $currency = false)
+    {
+        try {
+            new Money($amount, $currency);
+        } catch (LocalizedException $e) {
+            return false;
+        }
+        return true;
+    }
 
     public function __construct($amount, $currency = false)
     {
