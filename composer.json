@@ -9,7 +9,11 @@
         "magento/framework": "100.0.*"
     },
     "type": "magento2-module",
+<<<<<<< HEAD
     "version": "0.0.5",
+=======
+    "version": "0.0.4",
+>>>>>>> origin/master
     "license": [
         "MIT"
     ],
