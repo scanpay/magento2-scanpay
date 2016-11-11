@@ -28,6 +28,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
                     null,
                     [
                         'unsigned'       => true,
+                        'unique'         => true,
                         'auto_increment' => false,
                         'nullable'       => false,
                         'primary'        => true,

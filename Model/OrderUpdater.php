@@ -67,14 +67,14 @@ class OrderUpdater
         $trnId = $data['id'];
         /* Ignore transactions without order ids */
         if (!isset($data['orderid']) || $data['orderid'] === "") {
-            $this->logger->error('Received transaction #' . $trnId . ' without orderid');
+            $this->logger->info('Received transaction #' . $trnId . ' without orderid');
             return true;
         }
 
         $order = $this->order->load($data['orderid']);
         /* If order is not in system, ignore it */
         if (!$order->getId()) {
-            $this->logger->error('Order #' . $data['orderid'] . ' not in system');
+            $this->logger->info('Order #' . $data['orderid'] . ' not in system');
             return true;
         }
 
@@ -83,7 +83,7 @@ class OrderUpdater
         $oldSeq = (int)$order->getData(self::ORDER_DATA_SEQ);
 
         if ($shopId !== $orderShopId) {
-            $this->logger->error('Order #' . $data['orderid'] . ' shopid (' .
+            $this->logger->info('Order #' . $data['orderid'] . ' shopid (' .
                 $orderShopId . ') does not match current shopid (' .
                 $shopId . '()');
             return true;
