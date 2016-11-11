@@ -92,7 +92,7 @@ class PingHandler extends \Magento\Framework\App\Action\Action
             }
 
             $localSeq = $resobj['seq'];
-            if (!$this->orderUpdater->updateAll($shopId, $remoteSeq, $resobj['changes'])) {
+            if (!$this->orderUpdater->updateAll($shopId, $resobj['changes'])) {
                 $this->logger->error('error updating orders with Scanpay changes');
                 return;
             }
