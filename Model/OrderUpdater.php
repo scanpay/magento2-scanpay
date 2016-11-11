@@ -51,7 +51,7 @@ class OrderUpdater
 
     }
 
-    public function update($shopId, $seq, $data)
+    public function update($shopId, $data)
     {
         /* Ignore errornous transactions */
         if (isset($data['error'])) {
@@ -78,6 +78,7 @@ class OrderUpdater
             return true;
         }
 
+        $newSeq = $data['seq'];
         $orderShopId = (int)$order->getData(self::ORDER_DATA_SHOPID);
         $oldSeq = (int)$order->getData(self::ORDER_DATA_SEQ);
 
@@ -88,28 +89,33 @@ class OrderUpdater
             return true;
         }
 
-        if ($oldSeq >= $seq) {
+        if ($newSeq <= $oldSeq) {
             return true;
         }
 
         $payment = $order->getPayment();
         $auth = $data['totals']['authorized'];
+        $this->logger->error('Order #' . $data['orderid'] . ', transaction ' . $trnId . ' seq=' . $newSeq);
 
         /* Check if the transaciton is already registered */
-        if ($payment->getTransactionId() === null) {            
+        if ($payment->getTransactionId() === null) {
             $payment->setParentTransactionId(null);
             $payment->setLastTransId($trnId);
             $payment->setTransactionId($trnId);
             $payment->setAmountAuthorized((new Money($auth))->number());
+            $payment->save(); /* Save here to avoid exceptions from multiple auth trns per order */
+
             $transaction = $payment->addTransaction(Transaction::TYPE_AUTH, null, true);
             $transaction->save();
-
             $payment->addTransactionCommentsToOrder($transaction, __('The authorized amount is %1.', $auth));
+        }
 
+        if ($order->getState() === \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT) {
             $state = \Magento\Sales\Model\Order::STATE_PROCESSING;
             $order->setState($state);
             $order->setStatus($order->getConfig()->getStateDefaultStatus($state));
         }
+
 
         if (isset($data['acts']) && is_array($data['acts'])) {
             $nacts = (int)$order->getData(self::ORDER_DATA_NACTS);
@@ -143,23 +149,20 @@ class OrderUpdater
             if (isset($data['totals']['refunded']) && Money::validate($data['totals']['refunded'])) {
                 $payment->setAmountRefunded((new Money($data['totals']['refunded']))->number());
             }
-
         }
 
         $order->setData(self::ORDER_DATA_SEQ, $data['seq']);
-
         $payment->save();
         $order->save();
-
         /* Send email AFTER payment has been set */
         $this->notifyCustomer($order);
         return true;
     }
 
-    public function updateAll($shopId, $seq, $dataArr)
+    public function updateAll($shopId, $dataArr)
     {
         foreach ($dataArr as $data) {
-            if (!$this->update($shopId, $seq, $data)) {
+            if (!$this->update($shopId, $data)) {
                 return false;
             }
         }
