@@ -62,8 +62,8 @@ class PingHandler extends \Magento\Framework\App\Action\Action
             return;
         }
 
+        if (!isset($jsonreq['seq']) || !is_int($jsonreq['seq'])) { return; }
         $remoteSeq = $jsonreq['seq'];
-        if (!isset($remoteSeq) || !is_int($remoteSeq)) { return; }
 
         $localSeqObj = $this->sequencer->load($shopId);
         if (!$localSeqObj) {
@@ -76,7 +76,6 @@ class PingHandler extends \Magento\Framework\App\Action\Action
         }
 
         $localSeq = $localSeqObj['seq'];
-
         if ($localSeq === $remoteSeq) {
             $this->sequencer->updateMtime($shopId);
         }
