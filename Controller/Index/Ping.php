@@ -4,7 +4,7 @@ namespace Scanpay\PaymentModule\Controller\Index;
 
 use Scanpay\PaymentModule\Model\ScanpayClient;
 
-class PingHandler extends \Magento\Framework\App\Action\Action
+class Ping extends \Magento\Framework\App\Action\Action
 {
     private $order;
     private $logger;
