@@ -20,7 +20,8 @@ class GlobalSequencer
         $this->tableName = $this->dbConnection->getTableName('scanpay_seq');
     }
 
-    public function updateMtime($shopId) {
+    public function updateMtime($shopId)
+    {
         $data = [ 'mtime' => time() ];
         $where = [ 'shopid = ?' => $shopId ];
         $this->dbConnection->update($this->tableName, $data, $where);
