@@ -39,7 +39,7 @@ class ScanpayClient
             'Authorization'       => 'Basic ' . base64_encode($this->apikey),
             'X-Shop-Plugin'       => 'magento2/' . $version,
         ];
-        if (!isset($opts['cardholderIP'])) {
+        if (isset($opts['cardholderIP'])) {
             $headers = array_merge($headers, [ 'X-Cardholder-Ip: ' . $opts['cardholderIP'] ]);
         }
 
