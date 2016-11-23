@@ -63,7 +63,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         $shopId = (int)$shopId;
 
         $orderid = $order->getIncrementId();
-        $baseUrl = $this->urlHelper->getBaseUrl();
+        $baseUrl = rtrim($this->urlHelper->getBaseUrl(), '/');
         $data = [
             'orderid'    => $orderid,
             'language'   => $this->scopeConfig->getValue('payment/scanpaypaymentmodule/language'),
