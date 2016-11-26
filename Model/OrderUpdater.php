@@ -95,7 +95,6 @@ class OrderUpdater
 
         $payment = $order->getPayment();
         $auth = $data['totals']['authorized'];
-        $this->logger->error('Order #' . $data['orderid'] . ', transaction ' . $trnId . ' seq=' . $newSeq);
 
         /* Check if the transaciton is already registered */
         if ($payment->getTransactionId() === null) {
