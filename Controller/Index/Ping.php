@@ -42,28 +42,25 @@ class Ping extends \Magento\Framework\App\Action\Action
             return;
         }
 
-        $shopId = explode(':', $apikey)[0];
-        if (!ctype_digit($shopId)) {
-            $this->logger->error('Invalid Scanpay API-key format');
-            return;
-        }
-
-        $shopId = (int)$shopId;
-
         $localSig = base64_encode(hash_hmac('sha256', $reqBody, $apikey, true));
         if ($localSig !== $req->getHeader('X-Signature')) {
-            $this->logger->error('Received request with invalid signature');
             return;
         }
 
         $jsonreq = @json_decode($reqBody, true);
         if ($jsonreq === null) {
-            $this->logger->error('Received invalid json from Scanpay server');
+            $this->logger->error('Received invalid json from Scanpay ping');
             return;
         }
 
-        if (!isset($jsonreq['seq']) || !is_int($jsonreq['seq'])) { return; }
+        if (!isset($jsonreq['seq']) || !is_int($jsonreq['seq']) ||
+            !isset($jsonreq['shopid']) || !is_int($jsonreq['shopid'])) {
+            $this->logger->error('Missing json fields from Scanpay ping');
+            return;
+        }
+
         $remoteSeq = $jsonreq['seq'];
+        $shopId = $jsonreq['shopid'];
 
         $localSeqObj = $this->sequencer->load($shopId);
         if (!$localSeqObj) {
