@@ -43,7 +43,7 @@ class Ping extends \Magento\Framework\App\Action\Action
         }
 
         $localSig = base64_encode(hash_hmac('sha256', $reqBody, $apikey, true));
-        if ($localSig !== $req->getHeader('X-Signature')) {
+        if (!hash_equals($localSig, $req->getHeader('X-Signature'))) {
             return;
         }
 
