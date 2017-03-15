@@ -4,7 +4,6 @@ namespace Scanpay\PaymentModule\Model;
 
 use \Magento\Framework\Exception\LocalizedException;
 use \Magento\Sales\Model\Order\Payment\Transaction;
-use Scanpay\PaymentModule\Model\Money;
 
 class OrderUpdater
 {
@@ -34,7 +33,6 @@ class OrderUpdater
         return isset($data['id']) && is_int($data['id']) &&
             isset($data['totals']) && is_array($data['totals']) &&
             isset($data['totals']['authorized']) &&
-            Money::validate($data['totals']['authorized']) &&
             isset($data['rev']) && is_int($data['rev']);
     }
 
@@ -85,7 +83,7 @@ class OrderUpdater
         if ($shopId !== $orderShopId) {
             $this->logger->info('Order #' . $data['orderid'] . ' shopid (' .
                 $orderShopId . ') does not match current shopid (' .
-                $shopId . '()');
+                $shopId . ')');
             return true;
         }
 
@@ -95,16 +93,17 @@ class OrderUpdater
 
         $payment = $order->getPayment();
         $auth = $data['totals']['authorized'];
-
+		
         /* Check if the transaciton is already registered */
         if ($payment->getTransactionId() === null) {
             $payment->setParentTransactionId(null);
             $payment->setLastTransId($trnId);
             $payment->setTransactionId($trnId);
-            $payment->setAmountAuthorized((new Money($auth))->number());
+            $payment->setAmountAuthorized(explode(' ', $auth)[0]);
             $payment->save(); /* Save here to avoid exceptions from multiple auth trns per order */
 
             $transaction = $payment->addTransaction(Transaction::TYPE_AUTH, null, true);
+			$transaction->setOrderId($order->getId());
             $transaction->save();
             $payment->addTransactionCommentsToOrder($transaction, __('The authorized amount is %1.', $auth));
         }
@@ -123,6 +122,7 @@ class OrderUpdater
                 switch ($act['act']) {
                 case 'capture':
                     $transaction = $payment->addTransaction(Transaction::TYPE_CAPTURE, null, true);
+					$transaction->setOrderId($order->getId());
                     $transaction->save();
                     if (isset($act['total']) && is_string($act['total'])) {
                         $payment->addTransactionCommentsToOrder($transaction, __('The captured amount is %1.', $act['total']));
@@ -131,6 +131,7 @@ class OrderUpdater
 
                 case 'refund':
                     $transaction = $payment->addTransaction(Transaction::TYPE_REFUND, null, true);
+					$transaction->setOrderId($order->getId());
                     $transaction->save();
                     if (isset($act['total']) && is_string($act['total'])) {
                         $payment->addTransactionCommentsToOrder($transaction, __('The refunded amount is %1.', $act['total']));
@@ -141,12 +142,12 @@ class OrderUpdater
 
             $order->setData(self::ORDER_DATA_NACTS, count($data['acts']));
 
-            if (isset($data['totals']['captured']) && Money::validate($data['totals']['captured'])) {
-                $payment->setAmountPaid((new Money($data['totals']['captured']))->number());
+            if (isset($data['totals']['captured'])) {
+                $payment->setAmountPaid(explode(' ', $data['totals']['captured'])[0]);
             }
 
-            if (isset($data['totals']['refunded']) && Money::validate($data['totals']['refunded'])) {
-                $payment->setAmountRefunded((new Money($data['totals']['refunded']))->number());
+            if (isset($data['totals']['refunded'])) {
+                $payment->setAmountRefunded(explode(' ', $data['totals']['refunded'])[0]);
             }
         }
 

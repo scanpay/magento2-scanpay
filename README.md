@@ -35,8 +35,7 @@ Upon success it will return a payment url which the webshop customer should be r
 
 ## /Model
 The `/Model` folder defines utility classes used by other PHP files.
-For instance it contains a money class used to  handle amounts of currency.
-It also contains `ScanpayClient.php` which does the actual http request to the Scanpay API using PHP-curl.
+For instance it containts `ScanpayClient.php` which does the actual http request to the Scanpay API using PHP-curl.
 
 ## /etc
 The `/etc` folder defines module dependencies, module configuration, module naming and the layout of the admin panel module configuration.

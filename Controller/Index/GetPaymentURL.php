@@ -2,7 +2,6 @@
 
 namespace Scanpay\PaymentModule\Controller\Index;
 
-use Scanpay\PaymentModule\Model\Money;
 use Scanpay\PaymentModule\Model\OrderUpdater;
 
 class GetPaymentURL extends \Magento\Framework\App\Action\Action
@@ -119,7 +118,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             $data['items'][] = [
                 'name' => $item->getName(),
                 'quantity' => (int)$item->getQtyOrdered(),
-                'price' => (new Money($itemprice, $cur))->print(),
+                'price' => $itemprice . ' ' . $cur,
                 'sku' => $item->getSku(),
             ];
         }
@@ -132,7 +131,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             $data['items'][] = [
                 'name' => isset($method) ? $method : 'Shipping',
                 'quantity' => 1,
-                'price' => (new Money($shippingcost, $cur))->print(),
+                'price' => $shippingcost . ' ' . $cur,
             ];
         }
 
