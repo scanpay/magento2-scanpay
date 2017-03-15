@@ -9,7 +9,7 @@ use Scanpay\PaymentModule\Model\Money;
 class OrderUpdater
 {
     const ORDER_DATA_SHOPID = 'scanpay_shopid';
-    const ORDER_DATA_SEQ = 'scanpay_seq';
+    const ORDER_DATA_REV = 'scanpay_rev';
     const ORDER_DATA_NACTS = 'scanpay_nacts';
 
     private $logger;
@@ -35,7 +35,7 @@ class OrderUpdater
             isset($data['totals']) && is_array($data['totals']) &&
             isset($data['totals']['authorized']) &&
             Money::validate($data['totals']['authorized']) &&
-            isset($data['seq']) && is_int($data['seq']);
+            isset($data['rev']) && is_int($data['rev']);
     }
 
     public function notifyCustomer($order)
@@ -55,7 +55,7 @@ class OrderUpdater
     {
         /* Ignore errornous transactions */
         if (isset($data['error'])) {
-            $this->logger->error('Received error entry in seq upater: ' . $data['error']);
+            $this->logger->error('Received error entry in orderupater: ' . $data['error']);
             return true;
         }
 
@@ -78,9 +78,9 @@ class OrderUpdater
             return true;
         }
 
-        $newSeq = $data['seq'];
+        $newRev = $data['rev'];
         $orderShopId = (int)$order->getData(self::ORDER_DATA_SHOPID);
-        $oldSeq = (int)$order->getData(self::ORDER_DATA_SEQ);
+        $oldRev = (int)$order->getData(self::ORDER_DATA_REV);
 
         if ($shopId !== $orderShopId) {
             $this->logger->info('Order #' . $data['orderid'] . ' shopid (' .
@@ -89,7 +89,7 @@ class OrderUpdater
             return true;
         }
 
-        if ($newSeq <= $oldSeq) {
+        if ($newRev <= $oldRev) {
             return true;
         }
 
@@ -150,7 +150,7 @@ class OrderUpdater
             }
         }
 
-        $order->setData(self::ORDER_DATA_SEQ, $data['seq']);
+        $order->setData(self::ORDER_DATA_REV, $data['rev']);
         $payment->save();
         $order->save();
         /* Send email AFTER payment has been set */
@@ -158,10 +158,10 @@ class OrderUpdater
         return true;
     }
 
-    public function updateAll($shopId, $dataArr)
+    public function updateAll($shopId, $changes)
     {
-        foreach ($dataArr as $data) {
-            if (!$this->update($shopId, $data)) {
+        foreach ($changes as $trn) {
+            if (!$this->update($shopId, $trn)) {
                 return false;
             }
         }

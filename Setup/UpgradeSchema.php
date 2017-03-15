@@ -70,19 +70,19 @@ class UpgradeSchema implements UpgradeSchemaInterface
                 'unsigned' => true,
                 'nullable' => false,
                 'default'  => 0,
-                'comment'  => 'Shop ID'
+                'comment'  => 'Scanpay Shop ID'
             ]
         );
 
         $setup->getConnection()->addColumn(
             $setup->getTable('sales_order'),
-            OrderUpdater::ORDER_DATA_SEQ,
+            OrderUpdater::ORDER_DATA_REV,
             [
                 'type'     => Table::TYPE_BIGINT,
                 'unsigned' => true,
                 'nullable' => false,
                 'default'  => 0,
-                'comment'  => 'Scanpay Events Sequence Number'
+                'comment'  => 'Scanpay Order Revision Number'
             ]
         );
 
