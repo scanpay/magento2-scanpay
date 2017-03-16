@@ -35,7 +35,7 @@ class GlobalSequencer
         }
 
         $data = [ 'shopid' => $shopId, 'seq' => 0, 'mtime' => 0 ];
-        $this->dbConnection->insert($this->tableName, $data);      
+        $this->dbConnection->insert($this->tableName, $data);
     }
 
     public function save($shopId, $seq)

@@ -44,7 +44,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
 
         $state = \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT;
         $order->setState($state);
-        $order->setStatus($order->getConfig()->getStateDefaultStatus($state));        
+        $order->setStatus($order->getConfig()->getStateDefaultStatus($state));
         $order->save();
 
         $apikey = trim($this->crypt->decrypt($this->scopeConfig->getValue('payment/scanpaypaymentmodule/apikey')));

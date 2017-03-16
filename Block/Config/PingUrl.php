@@ -34,7 +34,7 @@ class PingUrl extends \Magento\Config\Block\System\Config\Form\Field
         $element->unsScope()->unsCanUseWebsiteValue()->unsCanUseDefaultValue();
         return parent::render($element);
     }
-    
+
     protected function fmtDeltaTime($dt)
     {
         $minute = 60;

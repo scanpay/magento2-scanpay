@@ -15,7 +15,7 @@ class OrderUpdater
     private $order;
     private $orderSender;
     private $trnBuilder;
-    
+
     public function __construct(
         \Psr\Log\LoggerInterface $logger,
         \Magento\Sales\Model\Order $order,

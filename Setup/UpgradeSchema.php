@@ -1,7 +1,7 @@
 <?php
 
 namespace Scanpay\PaymentModule\Setup;
- 
+
 use Magento\Framework\Setup\UpgradeSchemaInterface;
 use Magento\Framework\Setup\ModuleContextInterface;
 use Magento\Framework\Setup\SchemaSetupInterface;
@@ -14,7 +14,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
     public function upgrade(SchemaSetupInterface $setup, ModuleContextInterface $context)
     {
         $setup->startSetup();
- 
+
         // Get tutorial_simplenews table
         $tableName = $setup->getTable('scanpay_seq');
         // Check if the table already exists
