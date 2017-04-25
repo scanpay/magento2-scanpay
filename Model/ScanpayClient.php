@@ -56,10 +56,7 @@ class ScanpayClient
         $res = $client->request();
         $code = $res->getStatus();
         if ($code !== 200) {
-            if ($code === 403) {
-                throw new LocalizedException(__('Invalid API-key'));
-            }
-            throw new LocalizedException(__('Unexpected http code: %1 from %2', $code, $url));
+            throw new LocalizedException(__(explode("\n", $res->getBody())[0]));
         }
 
         /* Attempt to decode the json response */
