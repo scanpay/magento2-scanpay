@@ -100,19 +100,20 @@ class Ping extends \Magento\Framework\App\Action\Action
                 return;
             }
 
-            $localSeq = $resobj['seq'];
+            
             if (!$this->orderUpdater->updateAll($shopId, $resobj['changes'])) {
                 $this->report_error('error updating orders with changes', \Magento\Framework\App\Response\Http::STATUS_CODE_500);
                 return;
             }
 
-            if (!$this->sequencer->save($shopId, $localSeq)) {
-                if ($localSeqObj['seq'] !== $localSeq) {
+            if (!$this->sequencer->save($shopId, $resobj['seq'])) {
+                if ($resobj['seq']!== $localSeq) {
                     $this->report_error('did not save seq', \Magento\Framework\App\Response\Http::STATUS_CODE_500);
                     return;
                 }
                 break;
             }
+            $localSeq = $resobj['seq'];
         }
         $this->getResponse()->setContent(json_encode(['success' => true]));
     }
