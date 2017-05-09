@@ -32,30 +32,43 @@ class Ping extends \Magento\Framework\App\Action\Action
         $this->clientFactory = $clientFactory;
     }
 
+    private function report_error($msg, $code, $logmsg='_msg') {
+        if (!empty($logmsg)) {
+            if ($logmsg === '_msg') {
+                $logmsg = $msg;
+            }
+            $this->logger->error($logmsg);
+        }
+        $this->getResponse()
+            ->setStatusCode($code)
+            ->setContent(json_encode(['error' => $msg], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
+
     public function execute()
     {
         $req = $this->getRequest();
         $reqBody = $req->getContent();
         $apikey = trim($this->crypt->decrypt($this->scopeConfig->getValue('payment/scanpaypaymentmodule/apikey')));
         if (empty($apikey)) {
-            $this->logger->error('Missing API key in scanpay payment method configuration');
+            $this->report_error('Missing API key in payment method configuration', \Magento\Framework\App\Response\Http::STATUS_CODE_500);
             return;
         }
 
         $localSig = base64_encode(hash_hmac('sha256', $reqBody, $apikey, true));
         if (!hash_equals($localSig, $req->getHeader('X-Signature'))) {
+            $this->report_error('invalid signature', \Magento\Framework\App\Response\Http::STATUS_CODE_403, '');
             return;
         }
 
         $jsonreq = @json_decode($reqBody, true);
         if ($jsonreq === null) {
-            $this->logger->error('Received invalid json from Scanpay ping');
+            $this->report_error('received invalid json from ping', \Magento\Framework\App\Response\Http::STATUS_CODE_400);
             return;
         }
 
         if (!isset($jsonreq['seq']) || !is_int($jsonreq['seq']) ||
             !isset($jsonreq['shopid']) || !is_int($jsonreq['shopid'])) {
-            $this->logger->error('Missing json fields from Scanpay ping');
+            $this->report_error('missing or invalid json fields in ping', \Magento\Framework\App\Response\Http::STATUS_CODE_400);
             return;
         }
 
@@ -67,7 +80,7 @@ class Ping extends \Magento\Framework\App\Action\Action
             $this->sequencer->insert($shopId);
             $localSeqObj = $this->sequencer->load($shopId);
             if (!$localSeqObj) {
-                $this->logger->error('unable to load scanpay sequence number');
+                $this->report_error('unable to load scanpay seq', \Magento\Framework\App\Response\Http::STATUS_CODE_500);
                 return;
             }
         }
@@ -83,19 +96,24 @@ class Ping extends \Magento\Framework\App\Action\Action
             try {
                 $resobj = $client->getUpdatedTransactions($localSeq);
             } catch (\Magento\Framework\Exception\LocalizedException $e) {
-                $this->logger->error('scanpay client exception: ' . $e->getMessage());
+                $this->report_error('scanpay client exception: ' . $e->getMessage(), \Magento\Framework\App\Response\Http::STATUS_CODE_500);
                 return;
             }
 
             $localSeq = $resobj['seq'];
             if (!$this->orderUpdater->updateAll($shopId, $resobj['changes'])) {
-                $this->logger->error('error updating orders with Scanpay changes');
+                $this->report_error('error updating orders with changes', \Magento\Framework\App\Response\Http::STATUS_CODE_500);
                 return;
             }
 
             if (!$this->sequencer->save($shopId, $localSeq)) {
-                return;
+                if ($localSeqObj['seq'] !== $localSeq) {
+                    $this->report_error('did not save seq', \Magento\Framework\App\Response\Http::STATUS_CODE_500);
+                    return;
+                }
+                break;
             }
         }
+        $this->getResponse()->setContent(json_encode(['success' => true]));
     }
 }
