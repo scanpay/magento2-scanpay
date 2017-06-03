@@ -64,10 +64,11 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         $orderid = $order->getIncrementId();
         $baseUrl = rtrim($this->urlHelper->getBaseUrl(), '/');
         $data = [
-            'orderid'    => $orderid,
-            'language'   => $this->scopeConfig->getValue('payment/scanpaypaymentmodule/language'),
-            'successurl' => $baseUrl . '/checkout/onepage/success',
-            'items'      => [],
+            'orderid'     => $orderid,
+            'language'    => $this->scopeConfig->getValue('payment/scanpaypaymentmodule/language'),
+            'successurl'  => $baseUrl . '/checkout/onepage/success',
+            'autocapture' => (bool)($this->scopeConfig->getValue('payment/scanpaypaymentmodule/autocapture')),
+            'items'       => [],
         ];
         $billaddr = $order->getBillingAddress();
         $shipaddr = $order->getShippingAddress();
