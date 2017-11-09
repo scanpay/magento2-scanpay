@@ -2,17 +2,23 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <virtualType name="ScanpayAdapter" type="Magento\Payment\Model\Method\Adapter">
         <arguments>
-            <argument name="code" xsi:type="const">\Scanpay\PaymentModule\Model\Config\ConfigProvider::CODE</argument>
+            <argument name="code" xsi:type="string">scanpaypaymentmodule</argument>
             <argument name="formBlockType" xsi:type="string">Magento\Payment\Block\Form</argument>
             <argument name="infoBlockType" xsi:type="string">\Scanpay\PaymentModule\Block\PaymentInfo</argument>
             <argument name="valueHandlerPool" xsi:type="object">ScanpayValueHandlerPool</argument>
-            <argument name="validatorPool" xsi:type="object">ScanpayValidatorPool</argument>
-            <argument name="commandPool" xsi:type="object">ScanpayCommandPool</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="ScanpayAdapter_Ḿobilepay" type="Magento\Payment\Model\Method\Adapter">
+        <arguments>
+            <argument name="code" xsi:type="string">scanpaypaymentmodule_mobilepay</argument>
+            <argument name="formBlockType" xsi:type="string">Magento\Payment\Block\Form</argument>
+            <argument name="infoBlockType" xsi:type="string">\Scanpay\PaymentModule\Block\PaymentInfo</argument>
+            <argument name="valueHandlerPool" xsi:type="object">ScanpayValueHandlerPool_Ḿobilepay</argument>
         </arguments>
     </virtualType>
     <virtualType name="ScanpayConfig" type="Magento\Payment\Gateway\Config\Config">
         <arguments>
-            <argument name="methodCode" xsi:type="const">\Scanpay\PaymentModule\Model\Config\ConfigProvider::CODE</argument>
+            <argument name="methodCode" xsi:type="string">scanpaypaymentmodule</argument>
         </arguments>
     </virtualType>
     <virtualType name="ScanpayConfigValueHandler" type="Magento\Payment\Gateway\Config\ConfigValueHandler">
@@ -27,16 +33,23 @@
             </argument>
         </arguments>
     </virtualType>
-    <virtualType name="ScanpayValidatorPool" type="Magento\Payment\Gateway\Validator\ValidatorPool">
+
+    <virtualType name="ScanpayConfig_Ḿobilepay" type="Magento\Payment\Gateway\Config\Config">
         <arguments>
-            <argument name="validators" xsi:type="array">
+            <argument name="methodCode" xsi:type="string">scanpaypaymentmodule_mobilepay</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="ScanpayConfigValueHandler_Ḿobilepay" type="Magento\Payment\Gateway\Config\ConfigValueHandler">
+        <arguments>
+            <argument name="configInterface" xsi:type="object">ScanpayConfig_Ḿobilepay</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="ScanpayValueHandlerPool_Ḿobilepay" type="Magento\Payment\Gateway\Config\ValueHandlerPool">
+        <arguments>
+            <argument name="handlers" xsi:type="array">
+                <item name="default" xsi:type="string">ScanpayConfigValueHandler_Ḿobilepay</item>
             </argument>
         </arguments>
     </virtualType>
-    <virtualType name="ScanpayCommandPool" type="Magento\Payment\Gateway\Command\CommandPool">
-        <arguments>
-            <argument name="commands" xsi:type="array">
-            </argument>
-        </arguments>
-    </virtualType>
+
 </config>

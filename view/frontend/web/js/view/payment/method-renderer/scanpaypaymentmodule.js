@@ -26,7 +26,7 @@ define(
             },
 
             getCode: function () {
-                return 'scanpaypaymentmodule';
+                return this.item.method;
             },
             getData: function () {
                 return {
@@ -34,6 +34,18 @@ define(
                 };
             },
             placeOrder: function (data, event) {
+                var basemethod = 'scanpaypaymentmodule';
+                var method = this.item.method;
+                var query = '';
+                if (method.substr(0, basemethod.length) !== basemethod) {
+                    throw 'invalid payment method';
+                }
+                var go = method.substr(basemethod.length);
+                if (go) {
+                    go = go.substr(1);
+                    query = '?go=' + go;
+                }
+
                 if (!this.validate()) {
                     alert('invalid');
                     fullScreenLoader.stopLoader();
@@ -48,7 +60,6 @@ define(
                 var payload;
                 var paymentData = quote.paymentMethod();
                 var self = this;
-                console.log('check');
                 /** Checkout for guest and registered customer. */
                 if (!customer.isLoggedIn()) {
                     serviceUrl = urlBuilder.createUrl('/guest-carts/:quoteId/payment-information', {
@@ -95,7 +106,7 @@ define(
                             err.message = resObj.error;
                             return self.messageContainer.addErrorMessage(err);
                         }
-                        window.location = resObj.url;
+                        window.location = resObj.url + query;
                     };
                     xhr.onerror = function (e) {
                         fullScreenLoader.stopLoader();

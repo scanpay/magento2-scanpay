@@ -18,6 +18,10 @@ define(
             {
                 type: 'scanpaypaymentmodule',
                 component: 'Scanpay_PaymentModule/js/view/payment/method-renderer/scanpaypaymentmodule'
+            },
+            {
+                type: 'scanpaypaymentmodule_mobilepay',
+                component: 'Scanpay_PaymentModule/js/view/payment/method-renderer/scanpaypaymentmodule'
             }
         );
         /** Add view logic here if needed */
