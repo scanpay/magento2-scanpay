@@ -25,12 +25,12 @@ The actual HTML form presented for the customer can be found at `/view/frontend/
 
 `/view/frontend/web/js/view/payment/method-renderer/scanpaypaymentmodule.js` defines the javascript which is run when the customer places an order.
 
-This javascript creates the order and makes an AJAX request to the `/Controller/Index/GetPaymentURL.php` containing the order id.
+This javascript creates the order and makes an AJAX request to the `/Controller/Payment/GetPaymentURL.php` containing the order id.
 
 ## /Controller
 The `/Controller` folder defines the publically served PHP pages.
 It's served at an URL defined by `/etc/frontend/routes.xml`.
-`/Controller/Index/GetPaymentURL.php` gathers order parameters from Magento and uses `/Model/ScanpayClient.php` to send an request to the Scanpay API.
+`/Controller/Payment/GetPaymentURL.php` gathers order parameters from Magento and uses `/Model/ScanpayClient.php` to send an request to the Scanpay API.
 Upon success it will return a payment url which the webshop customer should be redirected to.
 
 ## /Model

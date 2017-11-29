@@ -1,6 +1,6 @@
 <?php
 
-namespace Scanpay\PaymentModule\Controller\Index;
+namespace Scanpay\PaymentModule\Controller\Payment;
 
 use Scanpay\PaymentModule\Model\ScanpayClient;
 

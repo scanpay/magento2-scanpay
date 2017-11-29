@@ -65,7 +65,7 @@ class PingUrl extends \Magento\Config\Block\System\Config\Form\Field
 
         $this->setData([
             'html_id' => $element->getHtmlId(),
-            'ping_url' => $this->_urlBuilder->getBaseUrl(['_secure' => true]) . 'scanpay/index/ping',
+            'ping_url' => $this->_urlBuilder->getBaseUrl(['_secure' => true]) . 'scanpay/payment/ping',
             'status_class' => 'scanpay--pingurl--never--pinged',
             'ping_dt' => $this->fmtDeltaTime($t),
         ]);
