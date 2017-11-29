@@ -109,9 +109,11 @@ class OrderUpdater
         }
 
         if ($order->getState() === \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT) {
+            $order->setTotalPaid($auth);
             $state = \Magento\Sales\Model\Order::STATE_PROCESSING;
             $order->setState($state);
             $order->setStatus($order->getConfig()->getStateDefaultStatus($state));
+            $payment->setAmountPaid($auth);
         }
 
 
@@ -142,12 +144,10 @@ class OrderUpdater
 
             $order->setData(self::ORDER_DATA_NACTS, count($data['acts']));
 
-            if (isset($data['totals']['captured'])) {
-                $payment->setAmountPaid(explode(' ', $data['totals']['captured'])[0]);
-            }
-
             if (isset($data['totals']['refunded'])) {
-                $payment->setAmountRefunded(explode(' ', $data['totals']['refunded'])[0]);
+                $refunded = explode(' ', $data['totals']['refunded'])[0];
+                $order->setTotalRefunded($refunded);
+                $payment->setAmountRefunded($refunded);
             }
         }
 

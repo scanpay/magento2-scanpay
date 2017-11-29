@@ -18,6 +18,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         \Magento\Framework\App\Action\Context $context,
         \Psr\Log\LoggerInterface $logger,
         \Magento\Sales\Model\Order $order,
+        \Magento\Checkout\Model\Session $session,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Framework\Encryption\Encryptor $crypt,
         \Magento\Framework\Url $urlHelper,
@@ -27,6 +28,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         parent::__construct($context);
         $this->logger = $logger;
         $this->order = $order;
+        $this->session = $session;
         $this->scopeConfig = $scopeConfig;
         $this->crypt = $crypt;
         $this->urlHelper = $urlHelper;
@@ -41,6 +43,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             $this->getResponse()->setContent(json_encode(['error' => 'order not found']));
             return;
         }
+        $this->session->restoreQuote();
 
         $state = \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT;
         $order->setState($state);
@@ -107,10 +110,9 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         $orderItems = $this->order->getAllItems();
 
         foreach ($orderItems as $item) {
-            $itemprice = $item->getPrice() + ($item->getTaxAmount() -
-                $item->getDiscountAmount()) / $item->getQtyOrdered();
+            $linetotal = $item->getRowTotalInclTax() - $item->getDiscountAmount();
 
-            if ($itemprice < 0) {
+            if ($linetotal < 0) {
                 $this->logger->error('Cannot handle negative price for item');
                 $this->getResponse()->setContent(json_encode(['error' => 'internal server error']));
                 return;
@@ -119,7 +121,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             $data['items'][] = [
                 'name' => $item->getName(),
                 'quantity' => (int)$item->getQtyOrdered(),
-                'price' => $itemprice . ' ' . $cur,
+                'total' => $linetotal . ' ' . $cur,
                 'sku' => $item->getSku(),
             ];
         }
@@ -132,7 +134,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             $data['items'][] = [
                 'name' => isset($method) ? $method : 'Shipping',
                 'quantity' => 1,
-                'price' => $shippingcost . ' ' . $cur,
+                'total' => $shippingcost . ' ' . $cur,
             ];
         }
 
