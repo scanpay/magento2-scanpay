@@ -28,7 +28,6 @@
         </field>
         <field id="pingurl" translate="label" type="text" sortOrder="10000" showInDefault="1" showInWebsite="1" showInStore="0">
           <label>Ping URL</label>
-          <backend_model>Scanpay\PaymentModule\Model\Config\PingUrl</backend_model>
           <frontend_model>Scanpay\PaymentModule\Block\Config\PingUrl</frontend_model>
           <comment>This is the URL Scanpay can use to notify Magento of changes in transaction status.</comment>
         </field>
