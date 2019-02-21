@@ -17,7 +17,7 @@ class GlobalSequencer
         $this->logger = $logger;
         $this->resource = $resource;
         $this->dbConnection = $this->resource->getConnection();
-        $this->tableName = $this->dbConnection->getTableName('scanpay_seq');
+        $this->tableName = $this->resource->getTableName('scanpay_seq');
     }
 
     public function updateMtime($shopId)

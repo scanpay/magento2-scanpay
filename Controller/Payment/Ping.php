@@ -55,7 +55,8 @@ class Ping extends \Magento\Framework\App\Action\Action
         }
 
         $localSig = base64_encode(hash_hmac('sha256', $reqBody, $apikey, true));
-        if (!hash_equals($localSig, $req->getHeader('X-Signature'))) {
+        $reqSig = $req->getHeader('X-Signature');
+        if (empty($reqSig) || !hash_equals($localSig, $reqSig)) {
             $this->report_error('invalid signature', \Magento\Framework\App\Response\Http::STATUS_CODE_403, '');
             return;
         }
@@ -100,7 +101,7 @@ class Ping extends \Magento\Framework\App\Action\Action
                 return;
             }
 
-            
+
             if (!$this->orderUpdater->updateAll($shopId, $resobj['changes'])) {
                 $this->report_error('error updating orders with changes', \Magento\Framework\App\Response\Http::STATUS_CODE_500);
                 return;
