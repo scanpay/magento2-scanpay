@@ -88,7 +88,7 @@ define(
 
                     var err = {};
                     var xhr = new XMLHttpRequest();
-                    xhr.open('POST', '/scanpay/Payment/GetPaymentURL', true);
+                    xhr.open('POST', '/scanpay/Payment/GetPaymentURL?isAjax=true', true);
                     xhr.onload = function(e) {
                         fullScreenLoader.stopLoader();
                         if (this.status !== 200) {

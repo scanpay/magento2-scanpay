@@ -1,10 +1,4 @@
 <?xml version="1.0"?>
-<!--
-/**
- * Copyright © 2015 Magento. All rights reserved.
- * See COPYING.txt for license details.
- */
--->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
   <system>
     <section id="payment">
@@ -22,7 +16,7 @@
           <source_model>Scanpay\PaymentModule\Model\Config\LanguageDropdown</source_model>
           <comment>Set the payment window language. 'Automatic' allows Scanpay to choose a language based on the browser of the customer</comment>
         </field>
-        <field id="apikey" translate="label" type="text" sortOrder="1000" showInDefault="1" showInWebsite="1" showInStore="0">
+        <field id="apikey" translate="label" type="obscure" sortOrder="1000" showInDefault="1" showInWebsite="1" showInStore="0">
           <label>API-key</label>
           <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
         </field>
