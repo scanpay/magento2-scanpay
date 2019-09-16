@@ -20,7 +20,7 @@ class ScanpayClient
         $this->apikey = $data['apikey'];
     }
 
-    protected function req($url, $data, $opts = [])
+    protected function request($url, $opts = [], $data=null)
     {
         $version = $this->moduleResource->getDbVersion('Scanpay_PaymentModule');
 
@@ -73,30 +73,25 @@ class ScanpayClient
         return $resobj;
     }
 
-    public function getPaymentURL($data, $opts = [])
+    public function newURL($data, $opts = [])
     {
-        $resobj = $this->req('/v1/new', $data, $opts);
-        /* Check the existence of the server and the payid field */
-        if (!isset($resobj['url'])) {
-            throw new LocalizedException(__('missing json fields in server response'));
+        $o = $this->request('/v1/new', $opts, $data);
+        if (isset($o['url']) && filter_var($o['url'], FILTER_VALIDATE_URL)) {
+            return $o['url'];
         }
-
-        if (filter_var($resobj['url'], FILTER_VALIDATE_URL) === false) {
-            throw new LocalizedException(__('invalid url in server response'));
-        }
-
-        /* Generate the payment URL link from the server and payid */
-        return $resobj['url'];
+        throw new LocalizedException(__('Invalid response from server'));
     }
 
-    public function getUpdatedTransactions($seq)
+    public function seq($seqnum, $opts = [])
     {
-        $resobj = $this->req('/v1/seq/' . $seq, null, null);
-        if (!isset($resobj['seq']) || !is_int($resobj['seq']) ||
-            !isset($resobj['changes']) ||!is_array($resobj['changes'])) {
-            throw new LocalizedException(__('missing json fields in server response'));
+        if (!is_numeric($seqnum)) {
+            throw new LocalizedException(__('seq argument must be an integer'));
         }
-
-        return $resobj;
+        $o = $this->request('/v1/seq/' . $seqnum, $opts);
+        if (isset($o['seq']) && is_int($o['seq'])
+                && isset($o['changes']) && is_array($o['changes'])) {
+            return $o;
+        }
+        throw new LocalizedException(__('Invalid response from server'));
     }
 }

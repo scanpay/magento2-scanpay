@@ -93,20 +93,20 @@ class Ping extends \Magento\Framework\App\Action\Action
 
         $client = $this->clientFactory->create(['apikey' => $apikey]);
 
-        while ($localSeq < $remoteSeq) {
+        while (1) {
             try {
-                $resobj = $client->getUpdatedTransactions($localSeq);
+                $resobj = $client->seq($localSeq);
             } catch (\Magento\Framework\Exception\LocalizedException $e) {
                 $this->report_error('scanpay client exception: ' . $e->getMessage(), \Magento\Framework\App\Response\Http::STATUS_CODE_500);
                 return;
             }
-
-
+            if (count($resobj['changes']) == 0) {
+                break;
+            }
             if (!$this->orderUpdater->updateAll($shopId, $resobj['changes'])) {
                 $this->report_error('error updating orders with changes', \Magento\Framework\App\Response\Http::STATUS_CODE_500);
                 return;
             }
-
             if (!$this->sequencer->save($shopId, $resobj['seq'])) {
                 if ($resobj['seq']!== $localSeq) {
                     $this->report_error('did not save seq', \Magento\Framework\App\Response\Http::STATUS_CODE_500);

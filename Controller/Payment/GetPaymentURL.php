@@ -41,12 +41,12 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             $this->getResponse()->setContent(json_encode(['error' => 'order not found']));
             return;
         }
-
+/*
         $state = \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT;
         $order->setState($state);
         $order->setStatus($order->getConfig()->getStateDefaultStatus($state));
         $order->save();
-
+*/
         $apikey = trim($this->crypt->decrypt($this->scopeConfig->getValue('payment/scanpaypaymentmodule/apikey')));
         if (empty($apikey)) {
             $this->getResponse()->setContent(json_encode(['error' => 'missing api-key']));
@@ -138,13 +138,15 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
         $client = $this->clientFactory->create(['apikey' => $apikey]);
         try {
             $opts = ['cardholderIP' => $this->remoteAddress->getRemoteAddress()];
-            $paymenturl = $client->getPaymentURL(array_filter($data), $opts);
+            $paymenturl = $client->newURL(array_filter($data), $opts);
         } catch (\Magento\Framework\Exception\LocalizedException $e) {
             $this->logger->error('scanpay client exception: ' . $e->getMessage());
             $this->getResponse()->setContent(json_encode(['error' => 'internal server error']));
             return;
         }
-
+        $state = \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT;
+        $order->setState($state);
+        $order->setStatus($order->getConfig()->getStateDefaultStatus($state));
         $order->setData(OrderUpdater::ORDER_DATA_SHOPID, $shopId);
         $order->save();
 

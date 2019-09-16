@@ -93,7 +93,7 @@ class OrderUpdater
 
         $payment = $order->getPayment();
         $auth = $data['totals']['authorized'];
-		
+
         /* Check if the transaciton is already registered */
         if ($payment->getTransactionId() === null) {
             $payment->setParentTransactionId(null);
@@ -109,13 +109,12 @@ class OrderUpdater
         }
 
         if ($order->getState() === \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT) {
-            $order->setTotalPaid($auth);
+            $order->setTotalPaid(explode(' ', $auth)[0]);
             $state = \Magento\Sales\Model\Order::STATE_PROCESSING;
             $order->setState($state);
             $order->setStatus($order->getConfig()->getStateDefaultStatus($state));
-            $payment->setAmountPaid($auth);
+            $payment->setAmountPaid(explode(' ', $auth)[0]);
         }
-
 
         if (isset($data['acts']) && is_array($data['acts'])) {
             $nacts = (int)$order->getData(self::ORDER_DATA_NACTS);
@@ -161,9 +160,11 @@ class OrderUpdater
 
     public function updateAll($shopId, $changes)
     {
-        foreach ($changes as $trn) {
-            if (!$this->update($shopId, $trn)) {
-                return false;
+        foreach ($changes as $change) {
+            if ($change['type'] === 'transaction')  {
+                if (!$this->update($shopId, $change)) {
+                    return false;
+                }
             }
         }
         return true;
