@@ -8,15 +8,19 @@ class ScanpayClient
 {
     const HOST = 'api.scanpay.dk';
     private $clientFactory;
+    private $moduleResource;
+    private $productMetadata;
     private $apikey;
 
     public function __construct(
         \Magento\Framework\HTTP\ZendClientFactory $clientFactory,
         \Magento\Framework\Module\ResourceInterface $moduleResource,
+        \Magento\Framework\App\ProductMetadataInterface $productMetadata,
         $data
     ) {
         $this->clientFactory = $clientFactory;
         $this->moduleResource = $moduleResource;
+        $this->productMetadata = $productMetadata;
         $this->apikey = $data['apikey'];
     }
 
@@ -37,7 +41,7 @@ class ScanpayClient
         $client->setConfig($config);
         $headers = [
             'Authorization'       => 'Basic ' . base64_encode($this->apikey),
-            'X-Shop-Plugin'       => 'magento2/' . $version,
+            'X-Shop-Plugin'       => 'magento2/' . $this->productMetadata->getVersion() . '/' . $version,
         ];
         if (isset($opts['cardholderIP'])) {
             $headers = array_merge($headers, [ 'X-Cardholder-Ip: ' . $opts['cardholderIP'] ]);
