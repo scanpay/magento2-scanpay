@@ -55,7 +55,7 @@ class Ping extends \Magento\Framework\App\Action\Action
         }
 
         $localSig = base64_encode(hash_hmac('sha256', $reqBody, $apikey, true));
-        $reqSig = $req->getHeader('X-Signature');
+        $reqSig = $req->getHeader('X-SIGNATURE');
         if (empty($reqSig) || !hash_equals($localSig, $reqSig)) {
             $this->report_error('invalid signature', \Magento\Framework\App\Response\Http::STATUS_CODE_403, '');
             return;

@@ -51,5 +51,7 @@
             </argument>
         </arguments>
     </virtualType>
-
+    <type name="Magento\Framework\App\Request\CsrfValidator">
+        <plugin name="csrf_validator_skip" type="Scanpay\PaymentModule\Plugin\CsrfValidatorSkip" />
+    </type>
 </config>
