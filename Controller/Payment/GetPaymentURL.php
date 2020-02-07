@@ -6,8 +6,8 @@ use Scanpay\PaymentModule\Model\OrderUpdater;
 
 class GetPaymentURL extends \Magento\Framework\App\Action\Action
 {
-    private $order;
     private $logger;
+    private $checkoutSession;
     private $scopeConfig;
     private $crypt;
     private $urlHelper;
@@ -17,7 +17,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
         \Psr\Log\LoggerInterface $logger,
-        \Magento\Sales\Model\Order $order,
+        \Magento\Checkout\Model\Session $checkoutSession,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Framework\Encryption\Encryptor $crypt,
         \Magento\Framework\Url $urlHelper,
@@ -26,7 +26,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
     ) {
         parent::__construct($context);
         $this->logger = $logger;
-        $this->order = $order;
+        $this->checkoutSession = $checkoutSession;
         $this->scopeConfig = $scopeConfig;
         $this->crypt = $crypt;
         $this->urlHelper = $urlHelper;
@@ -36,17 +36,11 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
 
     public function execute()
     {
-        $order = $this->order->load($this->getRequest()->getParam('orderid'));
+        $order = $this->checkoutSession->getLastRealOrder();
         if (!$order->getId()) {
             $this->getResponse()->setContent(json_encode(['error' => 'order not found']));
             return;
         }
-/*
-        $state = \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT;
-        $order->setState($state);
-        $order->setStatus($order->getConfig()->getStateDefaultStatus($state));
-        $order->save();
-*/
         $apikey = trim($this->crypt->decrypt($this->scopeConfig->getValue('payment/scanpaypaymentmodule/apikey')));
         if (empty($apikey)) {
             $this->getResponse()->setContent(json_encode(['error' => 'missing api-key']));
@@ -104,7 +98,7 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
 
         /* Add ordered items to data */
         $cur = $order->getOrderCurrencyCode();
-        $orderItems = $this->order->getAllItems();
+        $orderItems = $order->getAllItems();
 
         foreach ($orderItems as $item) {
             $linetotal = $item->getRowTotalInclTax() - $item->getDiscountAmount();
