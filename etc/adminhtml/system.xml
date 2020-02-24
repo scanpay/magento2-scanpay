@@ -8,29 +8,35 @@
           <label>Enabled</label>
           <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
         </field>
-        <field id="title" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
-          <label>Title</label>
-        </field>
-        <field id="language" translate="label" type="select" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="0">
-          <label>Language</label>
-          <source_model>Scanpay\PaymentModule\Model\Config\LanguageDropdown</source_model>
-          <comment>Set the payment window language. 'Automatic' allows Scanpay to choose a language based on the browser of the customer</comment>
-        </field>
-        <field id="apikey" translate="label" type="obscure" sortOrder="1000" showInDefault="1" showInWebsite="1" showInStore="0">
+        <field id="apikey" translate="label" type="obscure" sortOrder="2" showInDefault="1" showInWebsite="1" showInStore="0">
           <label>API-key</label>
           <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
         </field>
-        <field id="pingurl" translate="label" type="text" sortOrder="10000" showInDefault="1" showInWebsite="1" showInStore="0">
+        <field id="pingurl" translate="label" type="text" sortOrder="3" showInDefault="1" showInWebsite="1" showInStore="0">
           <label>Ping URL</label>
           <frontend_model>Scanpay\PaymentModule\Block\Config\PingUrl</frontend_model>
           <comment>This is the URL Scanpay can use to notify Magento of changes in transaction status.</comment>
         </field>
-        <field id="autocapture" translate="label" type="select" sortOrder="100000" showInDefault="1" showInWebsite="0" showInStore="0">
+        <field id="title" translate="label" type="text" sortOrder="4" showInDefault="1" showInWebsite="1" showInStore="1">
+          <label>Title</label>
+        </field>
+        <field id="autocapture" translate="label" type="select" sortOrder="5" showInDefault="1" showInWebsite="0" showInStore="0">
           <label>Auto-capture</label>
           <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
           <comment>Automatically capture transactions upon authorization. Only enable this if you sell services or immaterial goods.</comment>
         </field>
-        <field id="sort_order" translate="label" type="text" sortOrder="1000000" showInDefault="1" showInWebsite="1" showInStore="0">
+          <field id="captureonorderstatus" translate="label" type="select" sortOrder="6" showInDefault="1" showInWebsite="0" showInStore="0">
+          <label>Capture on order status</label>
+          <frontend_model>Scanpay\PaymentModule\Block\Config\CaptureOnOrderStatus</frontend_model>
+          <backend_model>Magento\Config\Model\Config\Backend\Serialized\ArraySerialized</backend_model>
+          <comment> Automatically capture orders when order status changes to one of the statuses selected above.</comment>
+        </field>
+        <field id="language" translate="label" type="select" sortOrder="7" showInDefault="1" showInWebsite="1" showInStore="0">
+          <label>Language</label>
+          <source_model>Scanpay\PaymentModule\Model\Config\LanguageDropdown</source_model>
+          <comment>Set the payment window language. 'Automatic' allows Scanpay to choose a language based on the browser of the customer</comment>
+        </field>
+        <field id="sort_order" translate="label" type="text" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="0">
           <label>Sort Order</label>
           <frontend_class>validate-number</frontend_class>
         </field>
@@ -41,8 +47,12 @@
           <label>Enabled</label>
           <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
         </field>
-        <field id="title" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+        <field id="title" translate="label" type="text" sortOrder="2" showInDefault="1" showInWebsite="1" showInStore="1">
           <label>Title</label>
+        </field>
+        <field id="sort_order" translate="label" type="text" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="0">
+          <label>Sort Order</label>
+          <frontend_class>validate-number</frontend_class>
         </field>
       </group>
 

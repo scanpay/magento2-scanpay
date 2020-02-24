@@ -129,9 +129,9 @@ class GetPaymentURL extends \Magento\Framework\App\Action\Action
             ];
         }
 
-        $client = $this->clientFactory->create(['apikey' => $apikey]);
+        $client = $this->clientFactory->create($apikey);
         try {
-            $opts = ['cardholderIP' => $this->remoteAddress->getRemoteAddress()];
+            $opts = ['headers' => [ 'X-Cardholder-IP' => $this->remoteAddress->getRemoteAddress() ]];
             $paymenturl = $client->newURL(array_filter($data), $opts);
         } catch (\Magento\Framework\Exception\LocalizedException $e) {
             $this->logger->error('scanpay client exception: ' . $e->getMessage());

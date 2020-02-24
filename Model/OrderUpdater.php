@@ -18,7 +18,7 @@ class OrderUpdater
 
     public function __construct(
         \Psr\Log\LoggerInterface $logger,
-        \Magento\Sales\Model\Order $order,
+        \Magento\Sales\Api\Data\OrderInterface $order,
         \Magento\Sales\Model\OrderNotifier $orderNotifier,
         \Magento\Sales\Model\Order\Payment\Transaction\BuilderInterface $trnBuilder
     ) {
@@ -69,7 +69,7 @@ class OrderUpdater
             return true;
         }
 
-        $order = $this->order->load($data['orderid']);
+        $order = $this->order->loadByIncrementId($data['orderid']);
         /* If order is not in system, ignore it */
         if (!$order->getId()) {
             $this->logger->info('Order #' . $data['orderid'] . ' not in system');
@@ -95,25 +95,24 @@ class OrderUpdater
         $auth = $data['totals']['authorized'];
 
         /* Check if the transaciton is already registered */
-        if ($payment->getTransactionId() === null) {
+        if (empty($payment->getLastTransId())) {
             $payment->setParentTransactionId(null);
             $payment->setLastTransId($trnId);
             $payment->setTransactionId($trnId);
+            $payment->setIsTransactionClosed(0);
             $payment->setAmountAuthorized(explode(' ', $auth)[0]);
             $payment->save(); /* Save here to avoid exceptions from multiple auth trns per order */
 
             $transaction = $payment->addTransaction(Transaction::TYPE_AUTH, null, true);
-			$transaction->setOrderId($order->getId());
+            $transaction->setOrder($order);
             $transaction->save();
             $payment->addTransactionCommentsToOrder($transaction, __('The authorized amount is %1.', $auth));
         }
 
         if ($order->getState() === \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT) {
-            $order->setTotalPaid(explode(' ', $auth)[0]);
             $state = \Magento\Sales\Model\Order::STATE_PROCESSING;
             $order->setState($state);
             $order->setStatus($order->getConfig()->getStateDefaultStatus($state));
-            $payment->setAmountPaid(explode(' ', $auth)[0]);
         }
 
         if (isset($data['acts']) && is_array($data['acts'])) {
@@ -122,17 +121,20 @@ class OrderUpdater
                 $act = $data['acts'][$i];
                 switch ($act['act']) {
                 case 'capture':
+                    $payment->setTransactionId($trnId . '_' . $i);
+                    $payment->setParentTransactionId($trnId);
+                    $payment->save();
                     $transaction = $payment->addTransaction(Transaction::TYPE_CAPTURE, null, true);
-					$transaction->setOrderId($order->getId());
+                    $transaction->setOrderId($order->getId());
                     $transaction->save();
-                    if (isset($act['total']) && is_string($act['total'])) {
-                        $payment->addTransactionCommentsToOrder($transaction, __('The captured amount is %1.', $act['total']));
-                    }
                     break;
 
                 case 'refund':
+                    $payment->setTransactionId($trnId . '_' . $i);
+                    $payment->setParentTransactionId($trnId);
+                    $payment->save();
                     $transaction = $payment->addTransaction(Transaction::TYPE_REFUND, null, true);
-					$transaction->setOrderId($order->getId());
+                    $transaction->setOrderId($order->getId());
                     $transaction->save();
                     if (isset($act['total']) && is_string($act['total'])) {
                         $payment->addTransactionCommentsToOrder($transaction, __('The refunded amount is %1.', $act['total']));
@@ -142,7 +144,11 @@ class OrderUpdater
             }
 
             $order->setData(self::ORDER_DATA_NACTS, count($data['acts']));
-
+            if (isset($data['totals']['captured'])) {
+                $captured = explode(' ', $data['totals']['captured'])[0];
+                $payment->setAmountPaid($captured);
+                $order->setTotalPaid($captured);
+            }
             if (isset($data['totals']['refunded'])) {
                 $refunded = explode(' ', $data['totals']['refunded'])[0];
                 $order->setTotalRefunded($refunded);

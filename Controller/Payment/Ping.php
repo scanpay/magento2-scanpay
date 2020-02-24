@@ -91,7 +91,7 @@ class Ping extends \Magento\Framework\App\Action\Action
             $this->sequencer->updateMtime($shopId);
         }
 
-        $client = $this->clientFactory->create(['apikey' => $apikey]);
+        $client = $this->clientFactory->create($apikey);
 
         while (1) {
             try {

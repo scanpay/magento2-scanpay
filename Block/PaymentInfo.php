@@ -10,10 +10,9 @@ class PaymentInfo extends \Magento\Payment\Block\Info
         $transport = parent::_prepareSpecificInformation($transport);
         $payment = $this->getInfo();
         $data = [];
-        if ($payment->getLastTransId()) {
-            $data[(string) __('Transaction Id')] = $payment->getLastTransId();
-        }
-        if ($payment->getAmountAuthorized()) {
+        $authTrn = $payment->getAuthorizationTransaction();
+        if (!empty($authTrn)) {
+            $data[(string) __('Transaction Id')] = $authTrn->getTxnId();
             $auth = $payment->getAmountAuthorized();
             $tot = $payment->getOrder()->getGrandTotal();
             $fmtAuth = $payment->formatPrice($auth);

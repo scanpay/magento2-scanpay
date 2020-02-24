@@ -6,14 +6,7 @@
             <argument name="formBlockType" xsi:type="string">Magento\Payment\Block\Form</argument>
             <argument name="infoBlockType" xsi:type="string">\Scanpay\PaymentModule\Block\PaymentInfo</argument>
             <argument name="valueHandlerPool" xsi:type="object">ScanpayValueHandlerPool</argument>
-        </arguments>
-    </virtualType>
-    <virtualType name="ScanpayAdapter_Mobilepay" type="Magento\Payment\Model\Method\Adapter">
-        <arguments>
-            <argument name="code" xsi:type="string">scanpaypaymentmodule_mobilepay</argument>
-            <argument name="formBlockType" xsi:type="string">Magento\Payment\Block\Form</argument>
-            <argument name="infoBlockType" xsi:type="string">\Scanpay\PaymentModule\Block\PaymentInfo</argument>
-            <argument name="valueHandlerPool" xsi:type="object">ScanpayValueHandlerPool_Mobilepay</argument>
+            <argument name="commandPool" xsi:type="object">ScanpayCommandPool</argument>
         </arguments>
     </virtualType>
     <virtualType name="ScanpayConfig" type="Magento\Payment\Gateway\Config\Config">
@@ -33,7 +26,34 @@
             </argument>
         </arguments>
     </virtualType>
+    <virtualType name="ScanpayCommandPool" type="Magento\Payment\Gateway\Command\CommandPool">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="authorize" xsi:type="string">ScanpayAuthorizeCommand</item>
+                <item name="capture" xsi:type="string">ScanpayCaptureCommand</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="ScanpayAuthorizeCommand" type="\Scanpay\PaymentModule\Gateway\Command\AuthorizeCommand">
+        <arguments>
+            <argument name="commandPool" xsi:type="object">ScanpayCommandPool</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="ScanpayCaptureCommand" type="\Scanpay\PaymentModule\Gateway\Command\CaptureCommand">
+        <arguments>
+            <argument name="commandPool" xsi:type="object">ScanpayCommandPool</argument>
+        </arguments>
+    </virtualType>
 
+    <virtualType name="ScanpayAdapter_Mobilepay" type="Magento\Payment\Model\Method\Adapter">
+        <arguments>
+            <argument name="code" xsi:type="string">scanpaypaymentmodule_mobilepay</argument>
+            <argument name="formBlockType" xsi:type="string">Magento\Payment\Block\Form</argument>
+            <argument name="infoBlockType" xsi:type="string">\Scanpay\PaymentModule\Block\PaymentInfo</argument>
+            <argument name="valueHandlerPool" xsi:type="object">ScanpayValueHandlerPool_Mobilepay</argument>
+            <argument name="commandPool" xsi:type="object">ScanpayCommandPool</argument>
+        </arguments>
+    </virtualType>
     <virtualType name="ScanpayConfig_Mobilepay" type="Magento\Payment\Gateway\Config\Config">
         <arguments>
             <argument name="methodCode" xsi:type="string">scanpaypaymentmodule_mobilepay</argument>
@@ -51,7 +71,8 @@
             </argument>
         </arguments>
     </virtualType>
+
     <type name="Magento\Framework\App\Request\CsrfValidator">
-        <plugin name="csrf_validator_skip" type="Scanpay\PaymentModule\Plugin\CsrfValidatorSkip" />
+        <plugin name="scanpay_paymentmodule_csrf_validator_skip" type="Scanpay\PaymentModule\Plugin\CsrfValidatorSkip" />
     </type>
 </config>

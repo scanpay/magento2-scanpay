@@ -5,12 +5,14 @@
       <scanpaypaymentmodule>
         <debug>0</debug>
         <active>1</active>
-        <title>Scanpay</title>
+        <title>Credit/Debit Cards</title>
         <order_status>pending_payment</order_status>
         <payment_action>authorize</payment_action>
         <sort_order>0</sort_order>
         <is_gateway>1</is_gateway>
         <can_use_checkout>1</can_use_checkout>
+        <can_authorize>1</can_authorize>
+        <can_capture>1</can_capture>
         <model>ScanpayAdapter</model>
       </scanpaypaymentmodule>
       <scanpaypaymentmodule_mobilepay>
@@ -22,6 +24,8 @@
         <sort_order>1</sort_order>
         <is_gateway>1</is_gateway>
         <can_use_checkout>1</can_use_checkout>
+        <can_authorize>1</can_authorize>
+        <can_capture>1</can_capture>
         <model>ScanpayAdapter_Mobilepay</model>
       </scanpaypaymentmodule_mobilepay>
     </payment>
