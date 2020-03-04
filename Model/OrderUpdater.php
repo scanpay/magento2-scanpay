@@ -104,7 +104,7 @@ class OrderUpdater
             $payment->save(); /* Save here to avoid exceptions from multiple auth trns per order */
 
             $transaction = $payment->addTransaction(Transaction::TYPE_AUTH, null, true);
-            $transaction->setOrder($order);
+            $transaction->setOrderId($order->getId());
             $transaction->save();
             $payment->addTransactionCommentsToOrder($transaction, __('The authorized amount is %1.', $auth));
         }

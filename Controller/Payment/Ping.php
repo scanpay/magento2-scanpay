@@ -87,8 +87,10 @@ class Ping extends \Magento\Framework\App\Action\Action
         }
 
         $localSeq = $localSeqObj['seq'];
-        if ($localSeq === $remoteSeq) {
+        if ($localSeq >= $remoteSeq) {
             $this->sequencer->updateMtime($shopId);
+            $this->getResponse()->setContent(json_encode(['success' => true]));
+            return;
         }
 
         $client = $this->clientFactory->create($apikey);
