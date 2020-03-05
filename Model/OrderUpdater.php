@@ -19,12 +19,12 @@ class OrderUpdater
     public function __construct(
         \Psr\Log\LoggerInterface $logger,
         \Magento\Sales\Api\Data\OrderInterface $order,
-        \Magento\Sales\Model\OrderNotifier $orderNotifier,
+        \Magento\Sales\Model\Order\Email\Sender\OrderSender $orderSender,
         \Magento\Sales\Model\Order\Payment\Transaction\BuilderInterface $trnBuilder
     ) {
         $this->logger = $logger;
         $this->order = $order;
-        $this->orderNotifier = $orderNotifier;
+        $this->orderSender = $orderSender;
         $this->trnBuilder = $trnBuilder;
     }
 
@@ -40,13 +40,14 @@ class OrderUpdater
     {
         if (!$order->getEmailSent()) {
             try {
-                $this->orderNotifier->notify($order);
-            } catch (LocalizedException $e) {
-                $this->logger->error('Unable to send order confirmation email for order' .
-                    $order->getIncrementId() . ', Exception message: ' . $e->getMessage());
+                $this->orderSender->send($order);
+                $order->addStatusHistoryComment(__('Order confirmation email sent successfully'))
+                      ->setIsCustomerNotified(true);
+            } catch (\Exception $e) {
+                $order->addStatusHistoryComment(__('Failed to send order confirmation email: %s', $e->getMessage()))
+                       ->setIsCustomerNotified(false);
             }
         }
-
     }
 
     public function update($shopId, $data)
@@ -158,9 +159,8 @@ class OrderUpdater
 
         $order->setData(self::ORDER_DATA_REV, $data['rev']);
         $payment->save();
-        $order->save();
-        /* Send email AFTER payment has been set */
         $this->notifyCustomer($order);
+        $order->save();
         return true;
     }
 
