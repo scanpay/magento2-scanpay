@@ -1,14 +1,18 @@
 {
     "name": "scanpay/magento2",
-    "description": "Integration with Scanpay's payment gateway",
+    "type": "magento2-module",
+    "description": "Scanpay plugin for Magento 2",
+    "keywords": ["scanpay", "Magento", "payments"],
+    "homepage": "https://scanpay.dk",
+    "support": {
+        "email": "support@scanpay.dk",
+        "docs": "https://docs.scanpay.dk/modules/magento-2",
+        "issues": "https://github.com/scanpaydk/magento2-scanpay/issues"
+    },
+    "license": ["MIT"],
     "require": {
         "php": "~5.5|~5.6|~7"
     },
-    "type": "magento2-module",
-    "version": "1.1.1",
-    "license": [
-        "MIT"
-    ],
     "autoload": {
         "files": [ "registration.php" ],
         "psr-4": {
