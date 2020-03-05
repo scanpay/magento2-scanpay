@@ -25,12 +25,6 @@
           <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
           <comment>Automatically capture transactions upon authorization. Only enable this if you sell services or immaterial goods.</comment>
         </field>
-          <field id="captureonorderstatus" translate="label" type="select" sortOrder="6" showInDefault="1" showInWebsite="0" showInStore="0">
-          <label>Capture on order status</label>
-          <frontend_model>Scanpay\PaymentModule\Block\Config\CaptureOnOrderStatus</frontend_model>
-          <backend_model>Magento\Config\Model\Config\Backend\Serialized\ArraySerialized</backend_model>
-          <comment> Automatically capture orders when order status changes to one of the statuses selected above.</comment>
-        </field>
         <field id="language" translate="label" type="select" sortOrder="7" showInDefault="1" showInWebsite="1" showInStore="0">
           <label>Language</label>
           <source_model>Scanpay\PaymentModule\Model\Config\LanguageDropdown</source_model>
