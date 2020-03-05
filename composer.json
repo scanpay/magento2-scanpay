@@ -1,7 +1,7 @@
 {
     "name": "scanpay/magento2",
     "type": "magento2-module",
-    "description": "Scanpay plugin for Magento 2",
+    "description": "Scanpay module for Magento 2",
     "keywords": ["scanpay", "Magento", "payments"],
     "homepage": "https://scanpay.dk",
     "support": {
