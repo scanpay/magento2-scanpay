@@ -7,14 +7,12 @@ namespace Scanpay\PaymentModule\Gateway\Command;
  */
 class CaptureCommand implements \Magento\Payment\Gateway\CommandInterface
 {
-    protected $subjectReader;
-    protected $order;
+    protected $orderRepository;
     protected $_scopeConfig;
     protected $crypt;
     protected $logger;
     protected $clientFactory;
     public function __construct(
-        \Magento\Braintree\Gateway\SubjectReader $subjectReader,
         \Magento\Sales\Api\OrderRepositoryInterface $orderRepository,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Framework\Encryption\Encryptor $crypt,
@@ -22,7 +20,6 @@ class CaptureCommand implements \Magento\Payment\Gateway\CommandInterface
         \Scanpay\PaymentModule\Model\ScanpayClientFactory $clientFactory
     )
     {
-        $this->subjectReader = $subjectReader;
         $this->orderRepository = $orderRepository;
         $this->_scopeConfig = $scopeConfig;
         $this->crypt = $crypt;
@@ -32,7 +29,7 @@ class CaptureCommand implements \Magento\Payment\Gateway\CommandInterface
 
     public function execute(array $commandSubject)
     {
-        $paymentObj = $this->subjectReader->readPayment($commandSubject);
+        $paymentObj = $commandSubject['payment'];
         $order = $this->orderRepository->get($paymentObj->getOrder()->getId());
         $payment = $paymentObj->getPayment();
         /* Get transaction id */
@@ -41,7 +38,7 @@ class CaptureCommand implements \Magento\Payment\Gateway\CommandInterface
         $apikey = trim($this->crypt->decrypt($this->_scopeConfig->getValue('payment/scanpaypaymentmodule/apikey')));
         $client = $this->clientFactory->create($apikey);
         $data = [
-            'total' => "{$order->getGrandTotal()} {$order->getOrderCurrencyCode()}",
+            'total' => "{$commandSubject['amount']} {$order->getOrderCurrencyCode()}",
             'index' => (int)$order->getData(\Scanpay\PaymentModule\Model\OrderUpdater::ORDER_DATA_NACTS),
         ];
         try {
